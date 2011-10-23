@@ -14,11 +14,15 @@ public class Draw extends Activity implements SeekBar.OnSeekBarChangeListener {
     TextView xValue;
     TextView yValue;
     View layout;
-    
+    Integer X;
+    Integer Y;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);    
         setContentView(R.layout.main);
+        X = (int) Math.random();
+        Y = (int) Math.random();
+        
         layout = findViewById(R.id.layout);
         layout.setBackgroundColor(Color.WHITE);
         
@@ -33,13 +37,11 @@ public class Draw extends Activity implements SeekBar.OnSeekBarChangeListener {
             boolean fromUser) {
         this.progress = progress;
         xValue.setText("X = " + progress);
-        
     }
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
         // TODO Auto-generated method stub
-        
     }
 
     @Override
