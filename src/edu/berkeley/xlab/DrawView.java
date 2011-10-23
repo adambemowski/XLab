@@ -29,7 +29,7 @@ public class DrawView extends View {
         canvas.drawLine(10, 290, 10, 10, paint);
         canvas.drawLine(10, 290, 280, 290, paint);
         paint.setColor(Color.RED);
-        canvas.drawLine(80, 100, 180, 200, paint);
+        canvas.drawLine(10, 190, 110, 290, paint);
     }
 
 }

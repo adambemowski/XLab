@@ -14,11 +14,13 @@ public final class R {
         public static final int icon=0x7f020000;
     }
     public static final class id {
-        public static final int frequency_slider=0x7f050003;
         public static final int layout=0x7f050000;
-        public static final int login_button=0x7f050005;
-        public static final int off_button=0x7f050004;
-        public static final int on_button=0x7f050002;
+        public static final int left_button=0x7f050004;
+        public static final int login_button=0x7f050007;
+        public static final int right_button=0x7f050006;
+        public static final int slider=0x7f050005;
+        public static final int x_value=0x7f050002;
+        public static final int y_value=0x7f050003;
         public static final int yourID=0x7f050001;
     }
     public static final class layout {
