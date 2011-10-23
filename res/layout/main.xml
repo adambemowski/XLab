@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:id="@+id/layout"
+    
+    >
+    <edu.berkeley.xlab.DrawView
+        android:id="@+id/yourID"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="10dp"
+        android:layout_width="fill_parent"
+        android:layout_height="300dp"
+    />
+    <TableLayout 
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content" 
+		android:layout_gravity="center"
+		android:stretchColumns="*"
+		android:layout_marginTop="10dp"
+		
+		>
+		 
+	<TableRow>
+		<Button 
+		android:id="@+id/on_button"
+		android:layout_width="0dp" 
+		android:layout_height="40dp" 
+		android:text="" 
+		android:layout_weight="1"/>
+		
+		<SeekBar
+        android:id="@+id/frequency_slider"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:max="20"
+        android:progress="10"
+        android:layout_weight="6"
+        />
+		<Button 
+		android:id="@+id/off_button"
+		android:layout_width="0dp" 
+		android:layout_height="40dp" 
+		android:text=">" 
+		android:layout_weight="1"/>
+	</TableRow>
+</TableLayout>
+    <Button
+		android:id="@+id/login_button"
+		android:text="Login"
+		android:textSize="17dp"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_gravity="center"
+	/>
+<TextView  
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:text="@string/hello"
+    />
+</LinearLayout>
