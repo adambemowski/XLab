@@ -1,0 +1,15 @@
+package edu.berkeley.xlab.constants;
+
+public class ModeChoiceIntents {
+	public static final String LOCATION_UPDATE_INTENT = 
+		"org.modechoice.android.custom.intent.LOCATION_UPDATE";
+	
+	public static final String SENSOR_STATUS_INTENT = 
+		"org.modechoice.android.custom.intent.SENSOR_STATUS";
+	
+	public static final String MODE_CHANGE_INTENT = 
+		"org.modechoice.android.custom.intent.MODE_CHANGE";
+	
+	public static final String ACCELEROMETER_SAVE_INTENT = 
+		"org.modechoice.android.custom.intent.ACCELEROMETER_SAVE";
+}
