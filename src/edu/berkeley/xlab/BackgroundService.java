@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;  
 import java.util.concurrent.TimeUnit;  
 
+import edu.berkeley.xlab.budgetline.*;
 import edu.berkeley.xlab.constants.Configuration;
 import edu.berkeley.xlab.util.Utils;
 
@@ -39,7 +40,7 @@ public class BackgroundService extends Service {
 	UploadStatus uploadStatus = UploadStatus.NO_ATTEMPT;
 	public static final int DOWNLOAD_INTERVAL = 15 * 60 * 1000; //In milliseconds
 	//TODO: Make this changeable in settings
-	public static final long SENSOR_CHECK_INTERVAL = 5 * 60 * 1000;
+	public static final long SENSOR_CHECK_INTERVAL = 0;//5 * 60 * 1000;
 	public static final long GPS_MIN_ON = 5 * 1000;
 	public static final long GPS_MAX_ON = 60 * 1000;
 	public static final long GPS_DESIRED_ACCURACY = 100;//In meters. Stops GPS if achieved
@@ -50,7 +51,7 @@ public class BackgroundService extends Service {
 	Map<Integer, XLabBinaryQuestion> xLabBinaryQuestions = 
 		new ConcurrentHashMap<Integer, BackgroundService.XLabBinaryQuestion>();
 	Map<Integer, XLabBudgetLineExp> xLabBudgetLines = 
-		new ConcurrentHashMap<Integer, BackgroundService.XLabBudgetLineExp>();
+		new ConcurrentHashMap<Integer, XLabBudgetLineExp>();
 	
 	/******** CONSTANTS *********/
 	
@@ -97,30 +98,32 @@ public class BackgroundService extends Service {
 		 * 
 		 * @author dvizzini
 		 */
-		ScheduledThreadPoolExecutor locationTimer= new ScheduledThreadPoolExecutor(5);//5 threads? 2? Anyone have any idea?
-		locationTimer.scheduleAtFixedRate(new Runnable() {
-			
-			private long interval = System.currentTimeMillis() - gpsListener.getLastSwitchedOn();
-			
-			@Override
-			public void run() {
-				if( interval > SENSOR_CHECK_INTERVAL ) {
-					if( !gpsListener.isRunning() ) {
-						gpsListener.start();
-					}
-				} else {
-					Location location = gpsListener.getLocation();
-					if (location.hasAccuracy() && 
-							(location.getAccuracy() <= GPS_DESIRED_ACCURACY) && 
-							(location.getTime() >= gpsListener.getLastSwitchedOn())) {
-						gpsListener.stop();
-						//Perform X-Lab checks
-						doXLabChecks(location.getLatitude(), location.getLongitude(),location.getAccuracy(), location.getSpeed(), location.getProvider());						
-					}
-				}				
-			}
-			
-		},0, 1000,TimeUnit.MILLISECONDS );  
+		if (SENSOR_CHECK_INTERVAL != 0) {
+			ScheduledThreadPoolExecutor locationTimer= new ScheduledThreadPoolExecutor(5);//5 threads? 2? Anyone have any idea?
+			locationTimer.scheduleAtFixedRate(new Runnable() {
+				
+				private long interval = System.currentTimeMillis() - gpsListener.getLastSwitchedOn();
+				
+				@Override
+				public void run() {
+					if( interval > SENSOR_CHECK_INTERVAL ) {
+						if( !gpsListener.isRunning() ) {
+							gpsListener.start();
+						}
+					} else {
+						Location location = gpsListener.getLocation();
+						if (location.hasAccuracy() && 
+								(location.getAccuracy() <= GPS_DESIRED_ACCURACY) && 
+								(location.getTime() >= gpsListener.getLastSwitchedOn())) {
+							gpsListener.stop();
+							//Perform X-Lab checks
+							doXLabChecks(location.getLatitude(), location.getLongitude(),location.getAccuracy(), location.getSpeed(), location.getProvider());						
+						}
+					}				
+				}
+				
+			},0, 1000,TimeUnit.MILLISECONDS );  			
+		}
 		
 		
 		/**
@@ -203,80 +206,6 @@ public class BackgroundService extends Service {
 		public Location getLocation() {
 			return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);				
 		}
-	}
-
-	/**
-	 * Defines budget-line experiment
-	 * 
-	 * @author Daniel Vizzini
-	 */
-	private class Session {
-		
-		public Line[] lines;
-		
-		
-		public Session (Line[] lines) {
-			this.lines = lines;
-		}
-		
-	}
-	
-	/**
-	 * For budget-line experiment
-	 * 
-	 * @author Daniel Vizzini
-	 */
-	private class Line {
-		
-		int id; double x_int; double y_int;
-		
-		public Line (int id, double x_int, double y_int) {
-			this.id = id;
-			this.x_int = x_int;
-			this.y_int = y_int;
-		}
-		
-	}
-
-	/**
-	 * Defines budget-line experiment
-	 * 
-	 * @author Daniel Vizzini
-	 */
-	private class XLabBudgetLineExp{
-						
-		private int id; public int getId() {return id;}
-		private String title; public String getTitle() {return title;}
-		private double lat; public double getLat() {return lat;}
-		private double lon; public double getLon() {return lon;}
-		private int radius; public int getRadius() {return radius;}
-		
-		private String x_label; public String getX_label() {return x_label;}
-		private String x_units; public String getX_units() {return x_units;}
-		private int x_max; public int getX_max() {return x_max;}
-		private int x_min; public int getX_min() {return x_min;}
-	    
-		private String y_label; public String getY_label() {return y_label;}
-		private String y_units; public String getY_units() {return y_units;}
-		private int y_max; public int getY_may() {return y_max;}
-		private int y_min; public int getY_min() {return y_min;}
-
-		private Session[] sessions; public Session[] getSessions() {return sessions;}
-		
-		private int currSession = 0; public int getCurrSession() {return currSession;} public int nextCurrSession() {currSession++; return currSession;}
-		private int currLine = 0; public int getCurrLine() {return currLine;} public int nextCurrLine() {currLine++; return currLine;}
-		
-		public XLabBudgetLineExp(int id, String title,
-				double lat, double lon, int radius, 
-				String x_label, String x_units, int x_max, int x_min,
-				String y_label, String y_units, int y_max, int y_min,
-				Session[] sessions) {
-			this.id = id; this.title = title;
-			this.lat = lat; this.lon = lon; this.radius = radius;
-			this.x_label = x_label; this.x_units = x_units; this.x_max = x_max; this.x_min = x_min;
-			this.y_label = y_label; this.y_units = y_units; this.y_max = y_max; this.y_min = y_min;
-		}
-
 	}
 	
 	private class XLabBinaryQuestion {
@@ -385,30 +314,38 @@ public class BackgroundService extends Service {
 						double lon = Double.valueOf(header[3]);
 						int radius = Integer.valueOf(header[4]);
 						
-					    String x_label = header[5];
-					    String x_units = header[6];
-					    int x_max = Integer.valueOf(header[7]);
-					    int x_min = Integer.valueOf(header[8]);
+						boolean probabilistic = ((header[5] == "1") ? true : false);
+						double x_prob = Double.valueOf(header[6]);
+						
+					    String x_label = header[7];
+					    String x_units = header[8];
+					    int x_max = Integer.valueOf(header[9]);
+					    int x_min = Integer.valueOf(header[10]);
 					    
-					    String y_label = header[9];
-					    String y_units = header[10];
-					    int y_max = Integer.valueOf(header[11]);
-					    int y_min = Integer.valueOf(header[12]);
+					    String y_label = header[11];
+					    String y_units = header[12];
+					    int y_max = Integer.valueOf(header[13]);
+					    int y_min = Integer.valueOf(header[14]);
 					    		    
 					    for (int i = 1; i < sessions.length; i++) {
 					    	
 					    	String[] lines = ses[i].split("line_parser,");//line as in budget line, not line of text
 						    Line[] lineInput = new Line[lines.length];
-
-						    for (int j = 0; j < lineInput.length; j++) {
+						    
+						    header = lines[0].split(",");
+						    
+						    for (int j = 1; j < lineInput.length; j++) {
 						    	String[] parts = lines[j].split(",");
-						    	lineInput[j] = new Line(Integer.valueOf(parts[0]),Double.valueOf(parts[1]),Double.valueOf(parts[2]));			    	
+						    	lineInput[j - 1] = new Line(Integer.valueOf(parts[0]),Double.valueOf(parts[1]),Double.valueOf(parts[2]),parts[3].charAt(0));
 						    }
+						    
+						    sessions[i-1] = new Session(Integer.valueOf(header[0]),Integer.valueOf(header[1]),lineInput);
 							
 					    }
 					    
 					    XLabBudgetLineExp bl = new XLabBudgetLineExp(idBL, title,
 								lat, lon, radius, 
+								probabilistic, x_prob,
 								x_label, x_units, x_max, x_min,
 								y_label, y_units, y_max, y_min,
 								sessions);
