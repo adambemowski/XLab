@@ -30,7 +30,12 @@
                   android:screenOrientation="portrait">
         </activity>
         
-        <service android:name="edu.berkeley.xlab.BackgroundService"
+        <activity android:name=".BudgetLineActivity"
+                  android:label="@string/app_name"
+                  android:screenOrientation="portrait">
+        </activity>
+        
+            <service android:name="edu.berkeley.xlab.BackgroundService"
         		 android:exported="false"
         		 android:process=":xlab_service">        
         </service>

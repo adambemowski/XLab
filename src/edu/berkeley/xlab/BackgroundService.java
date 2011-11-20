@@ -295,6 +295,47 @@ public class BackgroundService extends Service {
 				
 				String responseBL = Utils.getData(Configuration.XLAB_API_ENDPOINT_BL);
 				Log.d(BACKGROUND_SERVICE_TAG, responseBL);
+				
+				/*
+				 * For each experiment (Java object XLabBudgetLineExperiement):
+				 * 	id (integer), title, lat, lon, radius, probabilistic (true if you get either X or Y, false if you get both),  prob_x (probability of getting X, only applicable if probabilistic is true), x_label (label of x axis), x_units (units of x axis), x_max (maximum x intercept), x_min (minimum x intercept), y_label (label of y axis), y_uints (units of y axis), y_max (maximum y intercept), y_min (minimum y intercept), 
+				 * 
+				 * Then, for each experiment, a number of sessions for the set of budget lines subjects get at a given time (Java object Session)
+				 * 	"session_parser" (for parsing), id (1 through number of Sessions), line_chosen (which line in the session will actually dictate rewards),
+				 * 
+				 * Then, for each session,  a number of lines (Java object Line):
+				 * 	"line_parser" (for parsing), id (1 through number of Lines), x_int (x-intercept of line), y_int (y-intercept of line), winner ("X" if only X is rewarded, "Y" otherwise, only applicable if probabilistic is true)
+				 * 
+				 * Example encompassing a two-session probabilistic experiment in which line and a three-session non-probabilistic experiment (note it will come as one continuous string, with a newline between the experiments):
+				 * 
+				 * 14,Muscovite Risk/Reward,55.75,37.70,200,1,0.5,Reward if X chosen,Rubles,1500,750,Reward if Y chosen,Rubles,1500,750,
+				 * 		session_parser,1,3,
+				 * 			line_parser,1,800,1000,X,
+				 * 			line_parser,2,1350,850,X,
+				 * 			line_parser,3,1150,1250,Y,
+				 * 			line_parser,4,1150,1250,Y,
+				 * 		session_parser,2,2,
+				 * 			line_parser,1,1100,1000,Y,
+				 * 			line_parser,2,750,1150,X,
+				 * 			line_parser,3,1450,850,X,
+				 * 			line_parser,4,850,1050,Y,
+				 * 16,Kamchatkan Diet Selector,53.01,158.65,200,1,0.5,Regional Fried Dough,Rubles,1000,500,Pickled Produce,Rubles,1000,500,
+				 * 		session_parser,1,1,
+				 * 			line_parser,1,800,700,X,
+				 * 			line_parser,2,750,850,X,
+				 * 			line_parser,3,550,500,Y,
+				 * 			line_parser,4,600,750,Y,
+				 * 		session_parser,2,4,
+				 * 			line_parser,1,500,600,Y,
+				 * 			line_parser,2,750,650,X,
+				 * 			line_parser,3,650,850,X,
+				 * 			line_parser,4,850,950,Y,
+				 * 		session_parser,3,1,
+				 * 			line_parser,1,600,600,Y,
+				 * 			line_parser,2,650,650,X,
+				 * 			line_parser,3,650,950,X,
+				 * 			line_parser,4,750,950,Y,"
+				 */
 
 				if(null != responseBL) {
 					
