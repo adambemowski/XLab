@@ -35,7 +35,7 @@
                   android:screenOrientation="portrait">
         </activity>
         
-            <service android:name="edu.berkeley.xlab.BackgroundService"
+        <service android:name="edu.berkeley.xlab.BackgroundService"
         		 android:exported="false"
         		 android:process=":xlab_service">        
         </service>

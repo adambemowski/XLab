@@ -4,7 +4,7 @@ public class Configuration {
 	public static final boolean IS_DEV_MODE = false;
 	public static final boolean ENABLE_ACCEL_UPLOAD = false;
 	
-	public static final String AUTH_API_ENDPOINT = "http://ec2-107-20-49-145.compute-1.amazonaws.com/v2/api/auth/?format=json";
+	public static final String AUTH_API_ENDPOINT = "http://ec2-107-20-49-145.compute-1.amazonaws.com/api/v2/auth/?format=json";
 	public static final String XLAB_API_ENDPOINT_BL = "http://ec2-107-20-49-145.compute-1.amazonaws.com/xlab/api/budget/";
 	public static final String XLAB_API_ENDPOINT_BQ = "http://ec2-107-20-49-145.compute-1.amazonaws.com/xlab/api/binary/";
 	

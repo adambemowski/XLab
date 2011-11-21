@@ -319,7 +319,7 @@ public class BackgroundService extends Service {
 				 * 			line_parser,2,750,1150,X,
 				 * 			line_parser,3,1450,850,X,
 				 * 			line_parser,4,850,1050,Y,
-				 * 16,Kamchatkan Diet Selector,53.01,158.65,200,1,0.5,Regional Fried Dough,Rubles,1000,500,Pickled Produce,Rubles,1000,500,
+				 * 16,Kamchatkan Diet Selector,53.01,158.65,200,0,0.5,Regional Fried Dough,Rubles,1000,500,Pickled Produce,Rubles,1000,500,
 				 * 		session_parser,1,1,
 				 * 			line_parser,1,800,700,X,
 				 * 			line_parser,2,750,850,X,
