@@ -117,6 +117,7 @@ public class Utils {
 	    return responseBody;
 	}
 	
+	//TODO: Set timeout: http://stackoverflow.com/questions/693997/how-to-set-httpresponse-timeout-for-android-in-java
 	public static String getData(String endpoint) 
 		throws ClientProtocolException, IOException {
 		

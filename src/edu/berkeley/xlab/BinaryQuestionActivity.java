@@ -68,29 +68,29 @@ public class BinaryQuestionActivity extends Activity implements OnClickListener 
 	public void onClick(View v) {
 		if (v == findViewById(R.id.submit_button)) {
             this.answer = this.etAnswer.getText().toString().trim();	
-		try {
-			String response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BQ + 
-					"?bq_id=" + this.bqId + "&bq_response=" + answer + "&bq_username=" + this.username);			
-			Log.d(BQ_ACIVITY_TAG, response);
-			
-			if(null == response) {
-				//TODO: Check for response and retry if it failed
-				Log.e(BQ_ACIVITY_TAG, "Received null response");
-			} else if(response.equalsIgnoreCase("1")) {
-				Log.d(BQ_ACIVITY_TAG, "Received response from server - " + response);
+			try {
+				String response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BQ + 
+						"?bq_id=" + this.bqId + "&bq_response=" + answer + "&bq_username=" + this.username);			
+				Log.d(BQ_ACIVITY_TAG, response);
 				
-				TextView questionSet = (TextView) findViewById(R.id.submit_status);
-				questionSet.setText("Thank you for the response!");
-			} else if(response.equalsIgnoreCase("0")) {
-				Log.d(BQ_ACIVITY_TAG, "Received response from server - " + response);
+				if(null == response) {
+					//TODO: Check for response and retry if it failed
+					Log.e(BQ_ACIVITY_TAG, "Received null response");
+				} else if(response.equalsIgnoreCase("1")) {
+					Log.d(BQ_ACIVITY_TAG, "Received response from server - " + response);
+					
+					TextView questionSet = (TextView) findViewById(R.id.submit_status);
+					questionSet.setText("Thank you for the response!");
+				} else if(response.equalsIgnoreCase("0")) {
+					Log.d(BQ_ACIVITY_TAG, "Received response from server - " + response);
+					
+					TextView questionSet = (TextView) findViewById(R.id.submit_status);
+					questionSet.setText("Sorry, an error occurred!");
+				}
 				
-				TextView questionSet = (TextView) findViewById(R.id.submit_status);
-				questionSet.setText("Sorry, an error occurred!");
+			} catch (Exception e) {
+				Log.e(BQ_ACIVITY_TAG, e.toString());
 			}
-			
-		} catch (Exception e) {
-			Log.e(BQ_ACIVITY_TAG, e.toString());
-		}
 		}
 	}
 }

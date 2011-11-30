@@ -18,7 +18,7 @@ public class AutorunReceiver extends BroadcastReceiver {
 			if (null == service) {
 				Log.e(TAG, "Could not start service " + comp.toString());
 			}
-		} else {
+		} 	else {
 			Log.e(TAG, "Received unexpected intent " + intent.toString());
 		}
 	}

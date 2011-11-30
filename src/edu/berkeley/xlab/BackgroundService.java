@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;  
 import java.util.concurrent.TimeUnit;  
 
-import edu.berkeley.xlab.budgetline.*;
 import edu.berkeley.xlab.constants.Configuration;
+import edu.berkeley.xlab.experiments.*;
 import edu.berkeley.xlab.util.Utils;
 
 import android.app.Notification;
@@ -34,7 +34,7 @@ public class BackgroundService extends Service {
 	private NotificationManager notificationManager;
 	
 	GPSListener gpsListener;
-	
+	MainActivity.textView.setText("What up?");
 	long lastLocationUploadToServer = 0;
 	public enum UploadStatus {NO_ATTEMPT, SUCCESS, FAIL};
 	UploadStatus uploadStatus = UploadStatus.NO_ATTEMPT;
@@ -44,14 +44,6 @@ public class BackgroundService extends Service {
 	public static final long GPS_MIN_ON = 5 * 1000;
 	public static final long GPS_MAX_ON = 60 * 1000;
 	public static final long GPS_DESIRED_ACCURACY = 100;//In meters. Stops GPS if achieved
-	
-	//X-Lab related...
-	//TODO: Having a separate hashmap for each type of q could get out of hand. How to generalize?
-
-	Map<Integer, XLabBinaryQuestion> xLabBinaryQuestions = 
-		new ConcurrentHashMap<Integer, BackgroundService.XLabBinaryQuestion>();
-	Map<Integer, XLabBudgetLineExp> xLabBudgetLines = 
-		new ConcurrentHashMap<Integer, XLabBudgetLineExp>();
 	
 	/******** CONSTANTS *********/
 	
@@ -81,6 +73,7 @@ public class BackgroundService extends Service {
 		
 		this.username = Utils.getStringPreference(this, Configuration.USERNAME, "anonymous");
 		this.lastLocationUploadToServer = System.currentTimeMillis();
+		
 	}
 	
 	@Override
@@ -98,6 +91,7 @@ public class BackgroundService extends Service {
 		 * 
 		 * @author dvizzini
 		 */
+		//DV: DO NOT DELETE. SENSOR_CHECK_INTERVAL will not be zero
 		if (SENSOR_CHECK_INTERVAL != 0) {
 			ScheduledThreadPoolExecutor locationTimer= new ScheduledThreadPoolExecutor(5);//5 threads? 2? Anyone have any idea?
 			locationTimer.scheduleAtFixedRate(new Runnable() {
@@ -133,6 +127,7 @@ public class BackgroundService extends Service {
 		 */
 		//TODO: Make button for debugging
 		//TODO: Implement this: http://android-developers.blogspot.com/2010/05/android-cloud-to-device-messaging.html
+		/*DV: Commenting out for demo (and perhaps forever). Will get called at startup.
 		ScheduledThreadPoolExecutor downloader= new ScheduledThreadPoolExecutor(2);//5 threads? 2? Anyone have any idea?
 		downloader.scheduleAtFixedRate(new Runnable() {
 			
@@ -141,7 +136,8 @@ public class BackgroundService extends Service {
 				Thread t = new Thread( new FetchXLabTask() );
 				t.start();
 			}
-		},0, DOWNLOAD_INTERVAL,TimeUnit.MILLISECONDS );
+		},DOWNLOAD_INTERVAL, DOWNLOAD_INTERVAL,TimeUnit.MILLISECONDS );
+		*/
 		
 		// We want this service to continue running until it is explicitly
 	    // stopped, so return sticky.
@@ -173,7 +169,6 @@ public class BackgroundService extends Service {
 		}
 		
 		@Override
-		@SuppressWarnings("all")
 		public void onLocationChanged(Location location) {
 			//DO NOT DELETE. FOR WHEN SENSOR_CHECK_INTERVAL is 0
 			if (location.hasAccuracy() && (SENSOR_CHECK_INTERVAL == 0)) {
@@ -187,11 +182,13 @@ public class BackgroundService extends Service {
 			isRunning = false;
 			notifyOnLocationDisable();
 		}
+		
 		@Override
 		public void onProviderEnabled(String provider) {
 			this.start();
 			isRunning = true;
 		}
+		
 		@Override
 		public void onStatusChanged(String provider, int status, Bundle extras) {}
 		
@@ -207,208 +204,7 @@ public class BackgroundService extends Service {
 			return locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);				
 		}
 	}
-	
-	private class XLabBinaryQuestion {
-		int id;
-		double lat;
-		double lon;
-		int radius;
-		String question;
-		boolean answered;
 		
-		public XLabBinaryQuestion(int id, double lat, double lon,
-				int radius, String question) {
-			super();
-			this.id = id;
-			this.lat = lat;
-			this.lon = lon;
-			this.radius = radius;
-			this.question = question;
-		}		
-
-		public int getId() {
-			return id;
-		}
-
-		public double getLat() {
-			return lat;
-		}
-
-		public double getLon() {
-			return lon;
-		}
-
-		public int getRadius() {
-			return radius;
-		}
-
-		public String getQuestion() {
-			return question;
-		}
-		
-		public boolean isAnswered() {
-			return this.answered;
-		}
-
-		public void setAnswered(boolean answered) {
-			this.answered = answered;
-		}
-			
-	}
-		
-	/**
-	 * Fetch XLab tasks from the server
-	 * 
-	 * @author thejo and Daniel Vizzini
-	 */
-	private class FetchXLabTask implements Runnable {		
-		
-		@Override
-		public void run() {
-			try {
-				
-				String responseBQ = Utils.getData(Configuration.XLAB_API_ENDPOINT_BQ);
-				Log.d(BACKGROUND_SERVICE_TAG, responseBQ);
-				
-				if(null != responseBQ) {
-					
-					//Parse the response
-					String[] geofencesBQ = responseBQ.split("\n");
-					
-					for (String line : geofencesBQ) {
-						String[] parts = line.split(",");
-						int idBQ = Integer.valueOf(parts[0]);
-						
-						XLabBinaryQuestion bq = new XLabBinaryQuestion(idBQ, 
-								Double.valueOf(parts[1]), Double.valueOf(parts[2]), 
-								Integer.valueOf(parts[3]), String.valueOf(parts[4]));
-						
-						//TODO: The xLabBinaryQuestions map will keep growing if we do this.
-						//Clear old values.
-						if (! xLabBinaryQuestions.containsKey(idBQ)) {
-							xLabBinaryQuestions.put(Integer.valueOf(parts[0]), bq);
-						}
-					}
-					
-				Log.d(BACKGROUND_SERVICE_TAG, "Downloaded " + geofencesBQ.length + "BQ geofences.");
-				}
-				
-				String responseBL = Utils.getData(Configuration.XLAB_API_ENDPOINT_BL);
-				Log.d(BACKGROUND_SERVICE_TAG, responseBL);
-				
-				/*
-				 * For each experiment (Java object XLabBudgetLineExperiement):
-				 * 	id (integer), title, lat, lon, radius, probabilistic (true if you get either X or Y, false if you get both),  prob_x (probability of getting X, only applicable if probabilistic is true), x_label (label of x axis), x_units (units of x axis), x_max (maximum x intercept), x_min (minimum x intercept), y_label (label of y axis), y_uints (units of y axis), y_max (maximum y intercept), y_min (minimum y intercept), 
-				 * 
-				 * Then, for each experiment, a number of sessions for the set of budget lines subjects get at a given time (Java object Session)
-				 * 	"session_parser" (for parsing), id (1 through number of Sessions), line_chosen (which line in the session will actually dictate rewards),
-				 * 
-				 * Then, for each session,  a number of lines (Java object Line):
-				 * 	"line_parser" (for parsing), id (1 through number of Lines), x_int (x-intercept of line), y_int (y-intercept of line), winner ("X" if only X is rewarded, "Y" otherwise, only applicable if probabilistic is true)
-				 * 
-				 * Example encompassing a two-session probabilistic experiment in which line and a three-session non-probabilistic experiment (note it will come as one continuous string, with a newline between the experiments):
-				 * 
-				 * 14,Muscovite Risk/Reward,55.75,37.70,200,1,0.5,Reward if X chosen,Rubles,1500,750,Reward if Y chosen,Rubles,1500,750,
-				 * 		session_parser,1,3,
-				 * 			line_parser,1,800,1000,X,
-				 * 			line_parser,2,1350,850,X,
-				 * 			line_parser,3,1150,1250,Y,
-				 * 			line_parser,4,1150,1250,Y,
-				 * 		session_parser,2,2,
-				 * 			line_parser,1,1100,1000,Y,
-				 * 			line_parser,2,750,1150,X,
-				 * 			line_parser,3,1450,850,X,
-				 * 			line_parser,4,850,1050,Y,
-				 * 16,Kamchatkan Diet Selector,53.01,158.65,200,0,0.5,Regional Fried Dough,Rubles,1000,500,Pickled Produce,Rubles,1000,500,
-				 * 		session_parser,1,1,
-				 * 			line_parser,1,800,700,X,
-				 * 			line_parser,2,750,850,X,
-				 * 			line_parser,3,550,500,Y,
-				 * 			line_parser,4,600,750,Y,
-				 * 		session_parser,2,4,
-				 * 			line_parser,1,500,600,Y,
-				 * 			line_parser,2,750,650,X,
-				 * 			line_parser,3,650,850,X,
-				 * 			line_parser,4,850,950,Y,
-				 * 		session_parser,3,1,
-				 * 			line_parser,1,600,600,Y,
-				 * 			line_parser,2,650,650,X,
-				 * 			line_parser,3,650,950,X,
-				 * 			line_parser,4,750,950,Y,"
-				 */
-
-				if(null != responseBL) {
-					
-					//Parse the response
-					String[] geofencesBL = responseBL.split("\n");
-										    	
-					for (String exp : geofencesBL) {
-						
-						String[] ses = exp.split("session_parser,");
-					    Session[] sessions = new Session[ses.length - 1];
-						
-						String[] header = ses[0].split(",");
-						
-						int idBL = Integer.valueOf(header[0]);
-						String title = header[1];
-						double lat = Double.valueOf(header[2]);
-						double lon = Double.valueOf(header[3]);
-						int radius = Integer.valueOf(header[4]);
-						
-						boolean probabilistic = ((header[5] == "1") ? true : false);
-						double x_prob = Double.valueOf(header[6]);
-						
-					    String x_label = header[7];
-					    String x_units = header[8];
-					    int x_max = Integer.valueOf(header[9]);
-					    int x_min = Integer.valueOf(header[10]);
-					    
-					    String y_label = header[11];
-					    String y_units = header[12];
-					    int y_max = Integer.valueOf(header[13]);
-					    int y_min = Integer.valueOf(header[14]);
-					    		    
-					    for (int i = 1; i < sessions.length; i++) {
-					    	
-					    	String[] lines = ses[i].split("line_parser,");//line as in budget line, not line of text
-						    Line[] lineInput = new Line[lines.length];
-						    
-						    header = lines[0].split(",");
-						    
-						    for (int j = 1; j < lineInput.length; j++) {
-						    	String[] parts = lines[j].split(",");
-						    	lineInput[j - 1] = new Line(Integer.valueOf(parts[0]),Double.valueOf(parts[1]),Double.valueOf(parts[2]),parts[3].charAt(0));
-						    }
-						    
-						    sessions[i-1] = new Session(Integer.valueOf(header[0]),Integer.valueOf(header[1]),lineInput);
-							
-					    }
-					    
-					    XLabBudgetLineExp bl = new XLabBudgetLineExp(idBL, title,
-								lat, lon, radius, 
-								probabilistic, x_prob,
-								x_label, x_units, x_max, x_min,
-								y_label, y_units, y_max, y_min,
-								sessions);
-
-						if (! xLabBudgetLines.containsKey(idBL)) {
-							xLabBudgetLines.put(idBL, bl);
-						}
-
-					}
-						
-				//TODO: The xLabBinaryQuestions map will keep growing if we do this.
-				//Clear old values.
-				
-				Log.d(BACKGROUND_SERVICE_TAG, "Downloaded " + geofencesBL.length + " geofences.");
-				}
-				
-			} catch (Exception e) {
-				Log.e(BACKGROUND_SERVICE_TAG, e.toString());
-			}			
-		}		
-	}
-	
 	/**
 	 * Upload XLab task status to the server 
 	 * 
@@ -514,8 +310,9 @@ public class BackgroundService extends Service {
 	
 	public void doXLabChecks(double lat, double lon, float accuracy, float speed, String provider) {
 
+		App appState = ((App)getApplicationContext());
 		
-		for(Map.Entry<Integer, XLabBinaryQuestion> entry : xLabBinaryQuestions.entrySet()) {
+		for(Map.Entry<Integer, XLabBinaryQuestion> entry : appState.getXLabBinaryQuestions().entrySet()) {
 			XLabBinaryQuestion bq = entry.getValue();
 
 			//Consider this fix only if the accuracy is at least 20% of the radius specified in the geofence
@@ -526,12 +323,13 @@ public class BackgroundService extends Service {
 				t.start();
 			}
 			
-			Thread t = new Thread( new FetchXLabTask() );
-			t.start();
+			//TODO: DV: Commented out. Right now this is handled in 
+			//Thread t = new Thread( new FetchXLabTask() );
+			//t.start();
 		
 		}
 
-		for(Map.Entry<Integer, XLabBudgetLineExp> entry : xLabBudgetLines.entrySet()) {
+		for(Map.Entry<Integer, XLabBudgetLineExp> entry : appState.getXLabBudgetLineExps().entrySet()) {
 			XLabBudgetLineExp bl = entry.getValue();
 
 			//Consider this fix only if the accuracy is at least 20% of the radius specified in the geofence
@@ -542,8 +340,9 @@ public class BackgroundService extends Service {
 				t.start();
 			}
 			
-			Thread t = new Thread( new FetchXLabTask() );
-			t.start();
+			//TODO: DV: Commented out. Right now this is handled in 
+			//Thread t = new Thread( new FetchXLabTask() );
+			//t.start();
 		
 		}
 	}
@@ -606,14 +405,14 @@ public class BackgroundService extends Service {
 	 */
 	private void notifyOnLocationDisable() {
 		int icon = R.drawable.androidmarker;
-		CharSequence tickerText = "Mode Choice needs access to location";
+		CharSequence tickerText = "XLab needs access to location";
 		long when = System.currentTimeMillis();
 
 		Notification notification = new Notification(icon, tickerText, when);
 		notification.flags = Notification.FLAG_AUTO_CANCEL;
 		
 		Context context = getApplicationContext();
-		CharSequence contentTitle = "Mode Choice Alert";
+		CharSequence contentTitle = "XLab Alert";
 		CharSequence contentText = "Please turn on GPS.";
 		Intent notificationIntent = new Intent(this, LoginActivity.class);
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
