@@ -34,7 +34,6 @@ public class BackgroundService extends Service {
 	private NotificationManager notificationManager;
 	
 	GPSListener gpsListener;
-	MainActivity.textView.setText("What up?");
 	long lastLocationUploadToServer = 0;
 	public enum UploadStatus {NO_ATTEMPT, SUCCESS, FAIL};
 	UploadStatus uploadStatus = UploadStatus.NO_ATTEMPT;
@@ -282,9 +281,6 @@ public class BackgroundService extends Service {
 			int icon = R.drawable.androidmarker;
 			CharSequence tickerText = "X-Lab Alert";
 			long when = System.currentTimeMillis();
-			long timeDelay = 1000;
-
-			Thread.sleep(timeDelay);
 
 			Notification notification = new Notification(icon, tickerText, when);
 			notification.flags = Notification.FLAG_AUTO_CANCEL;
@@ -294,13 +290,12 @@ public class BackgroundService extends Service {
 			
 			Context context = getApplicationContext();
 			CharSequence contentTitle = "X-Lab Alert";
-			//CharSequence contentText = this.xlabBL.getQuestion();
-			Intent notificationIntent = new Intent(getApplicationContext(), BinaryQuestionActivity.class);
-			notificationIntent.putExtra("bq_id", this.xlabBL.getId());
-			//notificationIntent.putExtra("bq_question", this.xlabQ.getQuestion());
+			CharSequence contentText = this.xlabBL.getTitle();
+			Intent notificationIntent = new Intent(getApplicationContext(), BudgetLineActivity.class);
+			notificationIntent.putExtra("bl_id", this.xlabBL.getId());
 			PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, 0);
 
-			//notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
+			notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
 			notificationManager.notify(NOTIFICATION_ID, notification);
 			this.xlabBL.nextCurrSession();
 			}
