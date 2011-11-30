@@ -13,7 +13,7 @@ public class App extends Application {
 
 	private ConcurrentHashMap<Integer, XLabBudgetLineExp> xLabBudgetLineExps = new ConcurrentHashMap<Integer, XLabBudgetLineExp>();
 	public ConcurrentHashMap<Integer, XLabBudgetLineExp> getXLabBudgetLineExps(){return xLabBudgetLineExps;}
-	public XLabBudgetLineExp getXLabBudgetLineExp(Integer index){return xLabBudgetLineExps.get(index);}
+	public XLabBudgetLineExp getXLabBudgetLineExp(int index){return xLabBudgetLineExps.get(index);}
 	public void setXLabBudgetLineExps(ConcurrentHashMap<Integer, XLabBudgetLineExp> xLabBudgetLineExps ){this.xLabBudgetLineExps = xLabBudgetLineExps;}
 	
 }
