@@ -1,6 +1,6 @@
 package edu.berkeley.xlab;
 
-import org.apache.http.client.ClientProtocolException;
+import java.net.URLEncoder;
 
 import edu.berkeley.xlab.constants.Configuration;
 import edu.berkeley.xlab.util.Utils;
@@ -106,12 +106,13 @@ public class BinaryQuestionActivity extends Activity implements OnClickListener 
 			
 			try {
 				
-				response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BQ + "?bq_id=" + bqId + "&bq_response=" + answer + "&bq_username=" + username);			
+				response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BQ + "?bq_id=" + bqId + "&bq_response=" + URLEncoder.encode(answer, "utf-8") + "&bq_username=" + username);
 				Log.d(TAG, response);
 				
 				if(null == response) {
 					//TODO: Check for response and retry if it failed
 					Log.e(TAG, "Received null response");
+					message = "Sorry, an error occurred!";
 				} else if(response.equalsIgnoreCase("1")) {
 					Log.d(TAG, "Received response from server - " + response);
 					message = "Thank you for your response.";

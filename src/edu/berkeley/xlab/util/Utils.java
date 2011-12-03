@@ -2,6 +2,8 @@ package edu.berkeley.xlab.util;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -25,7 +27,6 @@ import org.apache.http.util.EntityUtils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-
 
 public class Utils {
 	
