@@ -12,6 +12,7 @@ public class AutorunReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
+		Log.d(TAG, "In onReceive");
 		if ("android.intent.action.BOOT_COMPLETED".equals(intent.getAction())) {
 			ComponentName comp = new ComponentName(context.getPackageName(), BackgroundService.class.getName());
 			ComponentName service = context.startService(new Intent().setComponent(comp));

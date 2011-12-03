@@ -28,6 +28,8 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 public class BackgroundService extends Service {
+	
+	//TODO:GET THIS CLASS IN A DIFFERNT PROCESS WITH SOME SORT OF LOCAL STORE.
 	String username;
 	
 	private LocationManager locationManager;
@@ -43,11 +45,11 @@ public class BackgroundService extends Service {
 	public static final long GPS_MIN_ON = 5 * 1000;
 	public static final long GPS_MAX_ON = 60 * 1000;
 	public static final long GPS_DESIRED_ACCURACY = 100;//In meters. Stops GPS if achieved
-	
+	public static final int DISABLED_NOTIFICATION_ID = -1;
 	/******** CONSTANTS *********/
 	
 	//Logging
-	public static final String BACKGROUND_SERVICE_TAG = "XLab-BACKGROUND";
+	public static final String TAG = "XLab-BACKGROUND";
 	
 	//Location Manager settings
 	static final int MIN_DISTANCE = 0;//DV: CHANGED FROM 5 Note that usage is controlled with other parameters
@@ -59,14 +61,11 @@ public class BackgroundService extends Service {
 	//File names
 	public static final String GPS_DATA_FILE = "gps_data_file";
 	
-	//Notification ID
-	static final int NOTIFICATION_ID = 1;
-	
 	@Override
 	public void onCreate() {
 		super.onCreate();
 		
-		Log.d(BACKGROUND_SERVICE_TAG, "In BackgroundService - OnCreate");
+		Log.d(TAG, "In BackgroundService - OnCreate");
 		this.locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		this.notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		
@@ -91,7 +90,7 @@ public class BackgroundService extends Service {
 		 * @author dvizzini
 		 */
 		//DV: DO NOT DELETE. SENSOR_CHECK_INTERVAL will not be zero
-		if (SENSOR_CHECK_INTERVAL != 0) {
+/*		if (SENSOR_CHECK_INTERVAL != 0) {
 			ScheduledThreadPoolExecutor locationTimer= new ScheduledThreadPoolExecutor(5);//5 threads? 2? Anyone have any idea?
 			locationTimer.scheduleAtFixedRate(new Runnable() {
 				
@@ -117,14 +116,13 @@ public class BackgroundService extends Service {
 				
 			},0, 1000,TimeUnit.MILLISECONDS );  			
 		}
-		
+*/		
 		
 		/**
 		 * Periodically uploads data
 		 * 
 		 * @author dvizzini
 		 */
-		//TODO: Make button for debugging
 		//TODO: Implement this: http://android-developers.blogspot.com/2010/05/android-cloud-to-device-messaging.html
 		/*DV: Commenting out for demo (and perhaps forever). Will get called at startup.
 		ScheduledThreadPoolExecutor downloader= new ScheduledThreadPoolExecutor(2);//5 threads? 2? Anyone have any idea?
@@ -145,16 +143,21 @@ public class BackgroundService extends Service {
 
 	@Override
 	public IBinder onBind(Intent arg0) {
-		// TODO Auto-generated method stub
+		//  Auto-generated method stub
 		return null;
 	}
 	
+	@Override
+	public void onDestroy() {
+		gpsListener.stop();
+	}
+
 	private class GPSListener implements LocationListener {
 		private boolean isRunning;
 		private long lastSwitchedOn;
 		
 		public void start() {
-			Log.d(BACKGROUND_SERVICE_TAG, "Starting GPS Provider");
+			Log.d(TAG, "Starting GPS Provider");
 			locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 
 					MIN_TIME, MIN_DISTANCE, this);
 			isRunning = true;
@@ -162,7 +165,7 @@ public class BackgroundService extends Service {
 		}
 		
 		public void stop() {
-			Log.d(BACKGROUND_SERVICE_TAG, "Stopping GPS Provider");
+			Log.d(TAG, "Stopping GPS Provider");
 			locationManager.removeUpdates(this);
 			isRunning = false;
 		}
@@ -170,9 +173,10 @@ public class BackgroundService extends Service {
 		@Override
 		public void onLocationChanged(Location location) {
 			//DO NOT DELETE. FOR WHEN SENSOR_CHECK_INTERVAL is 0
+			Log.d(TAG, "New location: " + location.getLatitude() + location.getLongitude());
 			if (location.hasAccuracy() && (SENSOR_CHECK_INTERVAL == 0)) {
 				//Perform X-Lab checks
-				doXLabChecks(location.getLatitude(), location.getLongitude(),location.getAccuracy(), location.getSpeed(), location.getProvider());						
+				doXLabChecks(location.getLatitude(), location.getLongitude(),location.getAccuracy());						
 			}
 		}
 
@@ -204,144 +208,6 @@ public class BackgroundService extends Service {
 		}
 	}
 		
-	/**
-	 * Upload XLab task status to the server 
-	 * 
-	 * @author thejo
-	 */
-	private class UploadXLabBQ implements Runnable {
-		private XLabBinaryQuestion xlabQ;	
-		private double lat;
-		private double lon;
-		private double accuracy;
-
-		public UploadXLabBQ(XLabBinaryQuestion xlabQ,double lat, double lon, double accuracy ) {
-			super();
-			this.xlabQ = xlabQ;
-			this.lat=lat;
-			this.lon=lon;
-			this.accuracy=accuracy;
-		}
-
-		@Override
-		public void run() {
-			try{
-			int icon = R.drawable.androidmarker;
-			CharSequence tickerText = "X-Lab Alert";
-			long when = System.currentTimeMillis();
-			long timeDelay = 1000;
-
-			Thread.sleep(timeDelay);
-
-			Notification notification = new Notification(icon, tickerText, when);
-			notification.flags = Notification.FLAG_AUTO_CANCEL;
-			notification.defaults |= Notification.DEFAULT_SOUND;
-			notification.defaults |= Notification.DEFAULT_VIBRATE;
-			notification.defaults |= Notification.DEFAULT_LIGHTS;
-			
-			Context context = getApplicationContext();
-			CharSequence contentTitle = "X-Lab Alert";
-			CharSequence contentText = this.xlabQ.getQuestion();
-			Intent notificationIntent = new Intent(getApplicationContext(), BinaryQuestionActivity.class);
-			notificationIntent.putExtra("bq_id", this.xlabQ.getId());
-			notificationIntent.putExtra("bq_question", this.xlabQ.getQuestion());
-			PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, 0);
-
-			notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
-			notificationManager.notify(NOTIFICATION_ID, notification);
-			this.xlabQ.setAnswered(true);
-			//}
-			}
-			catch(Exception e){}
-		}
-	}
-	
-	/**
-	 * Upload XLab task status to the server 
-	 * 
-	 */
-	//TODO: John, I imagine you will need to change this class extensively
-	private class UploadXLabBL implements Runnable {
-		private XLabBudgetLineExp xlabBL;	
-		private double lat;
-		private double lon;
-		private double accuracy;
-
-		public UploadXLabBL(XLabBudgetLineExp xlabBL,double lat, double lon, double accuracy ) {
-			super();
-			this.xlabBL = xlabBL;
-			this.lat=lat;
-			this.lon=lon;
-			this.accuracy=accuracy;
-		}
-
-		@Override
-		public void run() {
-			try{
-			int icon = R.drawable.androidmarker;
-			CharSequence tickerText = "X-Lab Alert";
-			long when = System.currentTimeMillis();
-
-			Notification notification = new Notification(icon, tickerText, when);
-			notification.flags = Notification.FLAG_AUTO_CANCEL;
-			notification.defaults |= Notification.DEFAULT_SOUND;
-			notification.defaults |= Notification.DEFAULT_VIBRATE;
-			notification.defaults |= Notification.DEFAULT_LIGHTS;
-			
-			Context context = getApplicationContext();
-			CharSequence contentTitle = "X-Lab Alert";
-			CharSequence contentText = this.xlabBL.getTitle();
-			Intent notificationIntent = new Intent(getApplicationContext(), BudgetLineActivity.class);
-			notificationIntent.putExtra("bl_id", this.xlabBL.getId());
-			PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, 0);
-
-			notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
-			notificationManager.notify(NOTIFICATION_ID, notification);
-			this.xlabBL.nextCurrSession();
-			}
-			catch(Exception e){}
-		}
-	}
-	
-	public void doXLabChecks(double lat, double lon, float accuracy, float speed, String provider) {
-
-		App appState = ((App)getApplicationContext());
-		
-		for(Map.Entry<Integer, XLabBinaryQuestion> entry : appState.getXLabBinaryQuestions().entrySet()) {
-			XLabBinaryQuestion bq = entry.getValue();
-
-			//Consider this fix only if the accuracy is at least 20% of the radius specified in the geofence
-			if(! bq.isAnswered() &&  (bq.getRadius() * 0.2f) >= accuracy && 
-					Utils.GetDistanceFromLatLon(bq.getLat(), bq.getLon(), lat, lon) <= bq.getRadius()) {
-				//Show a notification
-				Thread t = new Thread( new UploadXLabBQ(bq, lat,lon, accuracy) );
-				t.start();
-			}
-			
-			//TODO: DV: Commented out. Right now this is handled in 
-			//Thread t = new Thread( new FetchXLabTask() );
-			//t.start();
-		
-		}
-
-		for(Map.Entry<Integer, XLabBudgetLineExp> entry : appState.getXLabBudgetLineExps().entrySet()) {
-			XLabBudgetLineExp bl = entry.getValue();
-
-			//Consider this fix only if the accuracy is at least 20% of the radius specified in the geofence
-			if( (bl.getCurrSession() > 0) && (bl.getRadius() * 0.2f) >= accuracy && 
-					Utils.GetDistanceFromLatLon(bl.getLat(), bl.getLon(), lat, lon) <= bl.getRadius()) {
-				//Show a notification
-				Thread t = new Thread( new UploadXLabBL(bl, lat,lon, accuracy) );
-				t.start();
-			}
-			
-			//TODO: DV: Commented out. Right now this is handled in 
-			//Thread t = new Thread( new FetchXLabTask() );
-			//t.start();
-		
-		}
-	}
-	
 	private String readFromFile(String fileName) throws IOException {
 		StringBuilder strContent = new StringBuilder("");
 		int ch;
@@ -413,6 +279,87 @@ public class BackgroundService extends Service {
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
 		notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
-		notificationManager.notify(NOTIFICATION_ID, notification);
+		notificationManager.notify(DISABLED_NOTIFICATION_ID, notification);
+	}
+	
+	//Copy sensor code here
+	private static final long MIN_TIME_BETWEEN_ALERTS = 15 * 60 * 1000;
+	private ConcurrentHashMap<Integer, Long> lastTime = new ConcurrentHashMap<Integer, Long>();
+
+	private void doXLabChecks(double lat, double lon, float accuracy) {
+
+		App appState = ((App)getApplicationContext());
+		Log.d(TAG,"In doXLabChecks");
+		for(Map.Entry<Integer, Experiment> entry : appState.getXLabExps().entrySet()) {
+			Experiment exp = entry.getValue();
+
+			Log.d(TAG,"Examining " + exp.getTitle() + ": isAnswered = " + exp.isDone() + ": radius = " + exp.getRadius() + ", accuracy = " + accuracy + ", distance = " + Utils.GetDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon));
+			//Consider this fix only if the accuracy is at least 100% of the radius specified in the geofence
+			if(! exp.isDone() &&  (exp.getRadius() * 1.0f) >= accuracy && 
+					Utils.GetDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon) <= exp.getRadius()) {
+				Log.d(TAG,"Starting thread for " + exp.isDone());
+				//Show a notification
+				Thread t = new Thread( new UploadXLabTask(exp, lat,lon, accuracy) );
+				t.start();
+			}
+			
+		}
+
+	}
+	
+	/**
+	 * Upload XLab task status to the server 
+	 * 
+	 * @author Daniel Vizzini
+	 */
+	private class UploadXLabTask implements Runnable {
+		private NotificationManager notificationManager  = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		private Experiment exp;
+
+		public UploadXLabTask(Experiment exp, double lat, double lon, double accuracy ) {
+			super();
+			Log.d(TAG,"In UploadXlabBL constructor");
+			this.exp = exp;
+		}
+
+		@Override
+		public void run() {
+			
+			try{
+				Log.d(TAG,"a" + new Long(System.currentTimeMillis()).toString());
+				Log.d(TAG,"b" + new Long(lastTime.get(exp.getId())).toString());
+				Log.d(TAG,"c" + new Long(MIN_TIME_BETWEEN_ALERTS).toString());
+				if (System.currentTimeMillis() - lastTime.get(exp.getId()) > MIN_TIME_BETWEEN_ALERTS) {
+					
+					lastTime.put(exp.getId(), System.currentTimeMillis());
+					int icon = R.drawable.androidmarker;
+					CharSequence tickerText = "X-Lab Alert";
+					long when = System.currentTimeMillis();
+					
+					Log.d(TAG,"Running UploadXlabBL");
+					Notification notification = new Notification(icon, tickerText, when);
+					notification.flags = Notification.FLAG_AUTO_CANCEL;
+					notification.defaults |= Notification.DEFAULT_SOUND;
+					notification.defaults |= Notification.DEFAULT_VIBRATE;
+					notification.defaults |= Notification.DEFAULT_LIGHTS;
+					
+					Context context = getApplicationContext();
+					CharSequence contentTitle = "X-Lab Alert";
+					CharSequence contentText = this.exp.getTitle();
+					Intent notificationIntent = new Intent(getApplicationContext(), BudgetLineActivity.class);
+					notificationIntent.putExtra("bl_id", this.exp.getId());
+					PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+		
+					notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
+					Log.d(TAG,"UploadXlabBL notify for " + this.exp.getTitle());
+					notificationManager.cancelAll();
+					notificationManager.notify(exp.getId(), notification);
+					//TODO: Figure out how to increment sessions
+					//this.xlabBL.nextCurrSession();
+
+				}
+			}
+			catch(Exception e){}
+		}
 	}
 }

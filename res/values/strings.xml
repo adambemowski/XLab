@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">XLab</string>
+    
+    <!-- Menu items -->
+    <string name="menu_download">Download Experiments</string>
+    <string name="menu_turnoff">Turn GPS Off</string>
+    <string name="menu_turnon">Turn GPS On</string>
+    <string name="menu_debugBL">Debug BL</string>
+    <string name="menu_debugBQ">Debug BQ</string>
+    
 </resources>

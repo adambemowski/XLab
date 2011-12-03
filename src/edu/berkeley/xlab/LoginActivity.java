@@ -8,6 +8,7 @@ import java.util.TimeZone;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
@@ -35,7 +36,9 @@ public class LoginActivity extends Activity implements OnClickListener {
 		super.onCreate(savedInstanceState);
 		
 		Log.d(LOGIN_ACTIVITY_TAG, "In LoginActivity - onCreate");
-		
+        ComponentName comp = new ComponentName(this.getApplicationContext().getPackageName(),BackgroundService.class.getName());
+		this.getApplicationContext().startService(new Intent().setComponent(comp));
+
 		if(Utils.getBooleanPreference(this, Configuration.IS_LOGGED_IN, false) || 
 				Configuration.IS_DEV_MODE) {
 			Log.d(LOGIN_ACTIVITY_TAG, "User is logged in - redirect to main screen");

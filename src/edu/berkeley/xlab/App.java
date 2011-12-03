@@ -3,17 +3,16 @@ package edu.berkeley.xlab;
 import java.util.concurrent.ConcurrentHashMap;
 
 import android.app.Application;
+import android.util.Log;
 import edu.berkeley.xlab.experiments.*;
 
 public class App extends Application {
 	
-	private ConcurrentHashMap<Integer, XLabBinaryQuestion> xLabBinaryQuestions = new ConcurrentHashMap<Integer, XLabBinaryQuestion>();
-	public ConcurrentHashMap<Integer, XLabBinaryQuestion> getXLabBinaryQuestions(){return xLabBinaryQuestions;} 
-	public void setXLabBinaryQuestions(ConcurrentHashMap<Integer, XLabBinaryQuestion> xLabBinaryQuestions ){this.xLabBinaryQuestions = xLabBinaryQuestions;}
+	public static final String TAG = "XLab-App";
 
-	private ConcurrentHashMap<Integer, XLabBudgetLineExp> xLabBudgetLineExps = new ConcurrentHashMap<Integer, XLabBudgetLineExp>();
-	public ConcurrentHashMap<Integer, XLabBudgetLineExp> getXLabBudgetLineExps(){return xLabBudgetLineExps;}
-	public XLabBudgetLineExp getXLabBudgetLineExp(int index){return xLabBudgetLineExps.get(index);}
-	public void setXLabBudgetLineExps(ConcurrentHashMap<Integer, XLabBudgetLineExp> xLabBudgetLineExps ){this.xLabBudgetLineExps = xLabBudgetLineExps;}
-	
+	private ConcurrentHashMap<Integer, Experiment> xLabExps = new ConcurrentHashMap<Integer, Experiment>();
+	public ConcurrentHashMap<Integer, Experiment> getXLabExps(){return xLabExps;} 
+	public void setXLabExps(ConcurrentHashMap<Integer, Experiment> xLabExps){
+		this.xLabExps = xLabExps;
+	}
 }

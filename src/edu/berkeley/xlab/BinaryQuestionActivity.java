@@ -1,43 +1,54 @@
 package edu.berkeley.xlab;
 
+import org.apache.http.client.ClientProtocolException;
+
 import edu.berkeley.xlab.constants.Configuration;
 import edu.berkeley.xlab.util.Utils;
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.EditText;
+import android.widget.Toast;
 
 public class BinaryQuestionActivity extends Activity implements OnClickListener {
 	
-	int bqId;
+	private int bqId;
 	private String question;
 	private String answer;
 	private EditText etAnswer;
 	private Button btnSubmit;
-	String username; 
+	private String username; 
 	
-	public static final String BQ_ACIVITY_TAG = "XLab-BQ";
+	public static final String TAG = "XLab-BQ";
 	
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
+		App appState = ((App) getApplicationContext());
 		setContentView(R.layout.binary_question);
 		
 		Intent intent = this.getIntent();
 		Bundle extras = intent.getExtras();
 		
-		this.bqId = extras.getInt("bq_id");
-		this.question = extras.getString("bq_question");
+		this.bqId = extras.getInt("id");
+		this.question = appState.getXLabExps().get(bqId).getTitle();
 		
-		Log.d(BQ_ACIVITY_TAG, "Received question onCreate - " + this.question);
+		Log.d(TAG, "Received question onCreate - " + this.question);
 		
 		
 		etAnswer = (EditText)findViewById(R.id.answer);
@@ -54,43 +65,76 @@ public class BinaryQuestionActivity extends Activity implements OnClickListener 
 	@Override
     protected void onResume() {
     	super.onResume();
+		App appState = ((App) getApplicationContext());
     	
     	Intent intent = this.getIntent();
 		Bundle extras = intent.getExtras();
 		
-		this.bqId = extras.getInt("bq_id");
-		this.question = extras.getString("bq_question");
+		this.bqId = extras.getInt("id");
+		this.question = appState.getXLabExps().get(bqId).getTitle();
 		
-		Log.d(BQ_ACIVITY_TAG, "Received question onResume - " + this.question);    	
+		Log.d(TAG, "Received question onResume - " + this.question);    	
     }
 
 	@Override
 	public void onClick(View v) {
 		if (v == findViewById(R.id.submit_button)) {
-            this.answer = this.etAnswer.getText().toString().trim();	
+            this.answer = this.etAnswer.getText().toString().trim();
+            new PostBQ().execute();
+		}
+	}
+	
+	private class PostBQ extends AsyncTask<Void, Void, String> {
+		
+		private int duration = Toast.LENGTH_LONG;
+        private ProgressDialog dialog = new ProgressDialog(BinaryQuestionActivity.this);
+        private String response;
+		private String message;
+		private Context context = getApplicationContext();
+		private Toast toast;
+
+		@Override
+		protected void onPreExecute() {
+			dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+	        dialog.setMessage("Sending answer to server...");
+	        dialog.show();
+	    }
+		
+		@Override	
+	    protected String doInBackground(Void... whatever) {
+			
+			
 			try {
-				String response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BQ + 
-						"?bq_id=" + this.bqId + "&bq_response=" + answer + "&bq_username=" + this.username);			
-				Log.d(BQ_ACIVITY_TAG, response);
+				
+				response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BQ + "?bq_id=" + bqId + "&bq_response=" + answer + "&bq_username=" + username);			
+				Log.d(TAG, response);
 				
 				if(null == response) {
 					//TODO: Check for response and retry if it failed
-					Log.e(BQ_ACIVITY_TAG, "Received null response");
+					Log.e(TAG, "Received null response");
 				} else if(response.equalsIgnoreCase("1")) {
-					Log.d(BQ_ACIVITY_TAG, "Received response from server - " + response);
-					
-					TextView questionSet = (TextView) findViewById(R.id.submit_status);
-					questionSet.setText("Thank you for the response!");
+					Log.d(TAG, "Received response from server - " + response);
+					message = "Thank you for your response.";
 				} else if(response.equalsIgnoreCase("0")) {
-					Log.d(BQ_ACIVITY_TAG, "Received response from server - " + response);
-					
-					TextView questionSet = (TextView) findViewById(R.id.submit_status);
-					questionSet.setText("Sorry, an error occurred!");
+					Log.d(TAG, "Received response from server - " + response);
+					message = "Sorry, an error occurred!";
 				}
 				
 			} catch (Exception e) {
-				Log.e(BQ_ACIVITY_TAG, e.toString());
+				Log.e(TAG, e.toString());
 			}
+	        
+	        return message;
+	    }
+		
+		@Override
+		protected void onPostExecute(String message) {
+			Log.d(TAG,"In onPostExecute");
+			dialog.dismiss();
+			toast = Toast.makeText(context, message, duration);
+			toast.setGravity(Gravity.CENTER, 0,0);
+			toast.show();
 		}
+	    	    
 	}
 }

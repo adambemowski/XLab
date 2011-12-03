@@ -1,5 +1,9 @@
 package edu.berkeley.xlab.experiments;
 
+import edu.berkeley.xlab.BudgetLineActivity;
+import android.app.Activity;
+
+
 /*
  * Defines budget-line experiment
  * 
@@ -47,14 +51,10 @@ package edu.berkeley.xlab.experiments;
  * 			line_parser,4,750,950,Y,"
  */
 
-public class XLabBudgetLineExp {
+public class XLabBudgetLineExp extends Experiment {
 
-	private int id; public int getId() {return id;}
-	private String title; public String getTitle() {return title;}
-	private double lat; public double getLat() {return lat;}
-	private double lon; public double getLon() {return lon;}
-	private int radius; public int getRadius() {return radius;}
-	
+	public final int CONSTANT_ID = 1000000;
+
 	private boolean probabilistic; public boolean getProbabilistic() {return probabilistic;}
 	private double prob_x; public double getProb_x() {return prob_x;}
 	
@@ -70,22 +70,26 @@ public class XLabBudgetLineExp {
 
 	private Session[] sessions; public Session[] getSessions() {return sessions;}
 	
-	private int currSession = 0; public int getCurrSession() {return currSession;} public int nextCurrSession() {currSession++; return (currSession - 1);}
-	private int currLine = 0; public int getCurrLine() {return currLine;} public int nextCurrLine() {currLine++; return (currLine - 1);}
+	private int currSession = 0; 
+	public int getCurrSession() {return currSession;} 
+	public int nextCurrSession() {
+		currSession++;
+		if (currSession == sessions.length) {
+			this.done = true;
+		}
+		return (currSession - 1);
+	}	
 	
-	public XLabBudgetLineExp(int id, String title,
-			double lat, double lon, int radius, 
-			boolean probabilistic, double prob_x,
-			String x_label, String x_units, int x_max, int x_min,
-			String y_label, String y_units, int y_max, int y_min,
-			Session[] sessions) {
-		this.id = id; this.title = title;
-		this.lat = lat; this.lon = lon; this.radius = radius;
-		this.probabilistic = probabilistic; this.prob_x = prob_x;
-		this.x_label = x_label; this.x_units = x_units; this.x_max = x_max; this.x_min = x_min;
-		this.y_label = y_label; this.y_units = y_units; this.y_max = y_max; this.y_min = y_min;
+	private int currLine = 0;
+	public int getCurrLine() {return currLine;} 
+	public int nextCurrLine() {
+		currLine++; 
+		if (currLine == sessions[this.getCurrSession()].getLines().length) {
+			this.nextCurrSession();
+		}
+		return (currLine - 1);
 	}
-
+	
 	public XLabBudgetLineExp(String exp) {
 			
 		String[] ses = exp.split("session_parser,");
@@ -133,6 +137,8 @@ public class XLabBudgetLineExp {
 		this.probabilistic = probabilistic; this.prob_x = prob_x;
 		this.x_label = x_label; this.x_units = x_units; this.x_max = x_max; this.x_min = x_min;
 		this.y_label = y_label; this.y_units = y_units; this.y_max = y_max; this.y_min = y_min;
+		this.sessions = sessions;
+		this.activity = BudgetLineActivity.class;
 
 	}
 
