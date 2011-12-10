@@ -5,13 +5,20 @@
     android:layout_height="fill_parent"
     android:id="@+id/layout"
     >
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="fill_parent" 
+        android:layout_height="wrap_content" 
+        android:gravity="center"
+        android:textSize="24dp"
+        />
     <edu.berkeley.xlab.DrawView
         android:id="@+id/yourID"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
         android:layout_margin="10dp"
         android:layout_width="fill_parent"
-        android:layout_height="300dp"
+        android:layout_height="290dp"
     />
     <TableLayout 
 		android:layout_height="wrap_content"
@@ -48,7 +55,7 @@
 		android:layout_width="0dp" 
 		android:layout_height="40dp" 
 		android:text="&lt;" 
-		android:layout_weight="1"/>
+		android:layout_weight="1.5"/>
 		
 		<SeekBar
         android:id="@+id/slider"
@@ -63,7 +70,7 @@
 		android:layout_width="0dp" 
 		android:layout_height="40dp" 
 		android:text=">" 
-		android:layout_weight="1"/>
+		android:layout_weight="1.5"/>
 	</TableRow>
 </TableLayout>
     <Button
@@ -75,4 +82,3 @@
 	    android:layout_gravity="center"
 	/>
 </LinearLayout>
-

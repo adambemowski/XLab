@@ -63,7 +63,6 @@ public class MainActivity extends Activity {
 			// mSplashDialog.show();
 		}
 
-		@SuppressWarnings("static-access")
 		protected String doInBackground(Void... voids) {
 
 			Log.d(TAG,"In MainActivity -- FetchXLabTask -- doInBackground");
@@ -95,9 +94,7 @@ public class MainActivity extends Activity {
 						// TODO: The xLabBinaryQuestions map will keep growing
 						// if we do this.
 						// Clear old values.
-						if (!xLabExps.containsKey(bq.CONSTANT_ID + id)) {
-							xLabExps.put(id, bq);
-						}
+						xLabExps.putIfAbsent(XLabBinaryQuestion.CONSTANT_ID + id, bq);
 					}
 				}
 
@@ -115,13 +112,10 @@ public class MainActivity extends Activity {
 					for (String exp : geofencesBL) {
 
 						XLabBudgetLineExp bl = new XLabBudgetLineExp(exp);
-						int id = bl.getId();
 						message += bl.getTitle() + "\n";
 						Log.d(TAG, bl.getTitle());
 
-						if (!xLabExps.containsKey(bl.CONSTANT_ID + id)) {
-							xLabExps.put(bl.CONSTANT_ID + id, bl);
-						}
+						xLabExps.putIfAbsent(XLabBudgetLineExp.CONSTANT_ID + bl.getId(), bl);
 
 					}
 					// TODO: The xLabBinaryQuestions map will keep growing if we
@@ -195,7 +189,7 @@ public class MainActivity extends Activity {
 	//TODO: After working, copy following classes ingo BackgroundService and delete
 	//DV: For Debugging. Will only be in BackgroundService in Production Version
 	//Notification ID
-	private static final long MIN_TIME_BETWEEN_ALERTS = 15 * 60 * 1000;//TODO: Change to something reasonable
+	private static final long MIN_TIME_BETWEEN_ALERTS = 0;//15 * 60 * 1000;//TODO: Change to something reasonable
 	private ConcurrentHashMap<Integer, Long> lastTime = new ConcurrentHashMap<Integer, Long>();
 
 	private void doXLabChecks(double lat, double lon, float accuracy) {
@@ -260,7 +254,7 @@ public class MainActivity extends Activity {
 					CharSequence contentTitle = "X-Lab Alert";
 					CharSequence contentText = this.exp.getTitle();
 					Intent notificationIntent = new Intent(getApplicationContext(), exp.getActivity());
-					notificationIntent.putExtra("id", this.exp.getId());
+					notificationIntent.putExtra("id", this.exp.getId() + this.exp.getClassId());
 					PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 		
 					notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);

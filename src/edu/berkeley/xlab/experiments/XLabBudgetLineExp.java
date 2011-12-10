@@ -1,8 +1,7 @@
 package edu.berkeley.xlab.experiments;
 
+import android.util.Log;
 import edu.berkeley.xlab.BudgetLineActivity;
-import android.app.Activity;
-
 
 /*
  * Defines budget-line experiment
@@ -53,41 +52,42 @@ import android.app.Activity;
 
 public class XLabBudgetLineExp extends Experiment {
 
-	public final int CONSTANT_ID = 1000000;
+	public static final String TAG = "X-Lab - XLabBudgetLineExp";
+	public static final int CONSTANT_ID = 0;
 
 	private boolean probabilistic; public boolean getProbabilistic() {return probabilistic;}
 	private double prob_x; public double getProb_x() {return prob_x;}
 	
 	private String x_label; public String getX_label() {return x_label;}
 	private String x_units; public String getX_units() {return x_units;}
-	private int x_max; public int getX_max() {return x_max;}
-	private int x_min; public int getX_min() {return x_min;}
+	private float x_max; public float getX_max() {return x_max;}
+	private float x_min; public float getX_min() {return x_min;}
     
 	private String y_label; public String getY_label() {return y_label;}
 	private String y_units; public String getY_units() {return y_units;}
-	private int y_max; public int getY_may() {return y_max;}
-	private int y_min; public int getY_min() {return y_min;}
+	private float y_max; public float getY_max() {return y_max;}
+	private float y_min; public float getY_min() {return y_min;}
 
-	private Session[] sessions; public Session[] getSessions() {return sessions;}
+	private Session[] sessions; public Session[] getSessions() {return sessions;} public Session getSession(int id) {return sessions[id];}
 	
-	private int currSession = 0; 
-	public int getCurrSession() {return currSession;} 
-	public int nextCurrSession() {
+	private int currSession; public int getCurrSession() {return currSession;} 
+	public void nextSession() {
 		currSession++;
 		if (currSession == sessions.length) {
 			this.done = true;
 		}
-		return (currSession - 1);
 	}	
 	
-	private int currLine = 0;
-	public int getCurrLine() {return currLine;} 
-	public int nextCurrLine() {
-		currLine++; 
-		if (currLine == sessions[this.getCurrSession()].getLines().length) {
-			this.nextCurrSession();
+	private int currLine; public int getCurrLine() {return currLine;} 
+	public void nextLine() {
+		
+		Log.d(TAG,""+(currLine+1));
+		Log.d(TAG,""+sessions[this.getCurrSession()].getLines().length);
+		currLine = (currLine + 1) % sessions[this.getCurrSession()].getLines().length; 
+		Log.d(TAG,""+currLine);
+		if (currLine == 0) {
+			this.nextSession();
 		}
-		return (currLine - 1);
 	}
 	
 	public XLabBudgetLineExp(String exp) {
@@ -98,6 +98,7 @@ public class XLabBudgetLineExp extends Experiment {
 		String[] header = ses[0].split(",");
 		
 		int id = Integer.valueOf(header[0]);
+		this.classId = CONSTANT_ID;
 		String title = header[1];
 		double lat = Double.valueOf(header[2]);
 		double lon = Double.valueOf(header[3]);
@@ -108,27 +109,27 @@ public class XLabBudgetLineExp extends Experiment {
 		
 	    String x_label = header[7];
 	    String x_units = header[8];
-	    int x_max = Integer.valueOf(header[9]);
-	    int x_min = Integer.valueOf(header[10]);
+	    float x_max = Float.valueOf(header[9]);
+	    float x_min = Float.valueOf(header[10]);
 	    
 	    String y_label = header[11];
 	    String y_units = header[12];
-	    int y_max = Integer.valueOf(header[13]);
-	    int y_min = Integer.valueOf(header[14]);
+	    float y_max = Float.valueOf(header[13]);
+	    float y_min = Float.valueOf(header[14]);
 	    		    
-	    for (int i = 1; i < sessions.length; i++) {
+	    for (int i = 0; i < sessions.length; i++) {
 	    	
-	    	String[] lines = ses[i].split("line_parser,");//line as in budget line, not line of text
-		    Line[] lineInput = new Line[lines.length];
-		    
+	    	String[] lines = ses[i+1].split("line_parser,");//line as in budget line, not line of text
+		    Line[] lineInput = new Line[lines.length - 1];
+		    Log.d(TAG,"lineInput array has length " + lineInput.length);
 		    header = lines[0].split(",");
 		    
-		    for (int j = 1; j < lineInput.length; j++) {
-		    	String[] parts = lines[j].split(",");
-		    	lineInput[j - 1] = new Line(Integer.valueOf(parts[0]),Double.valueOf(parts[1]),Double.valueOf(parts[2]),parts[3].charAt(0));
+		    for (int j = 0; j < lineInput.length; j++) {
+		    	String[] parts = lines[j+1].split(",");
+		    	lineInput[j] = new Line(Integer.valueOf(parts[0]),Float.valueOf(parts[1]),Float.valueOf(parts[2]),parts[3].charAt(0));
 		    }
 		    
-		    sessions[i-1] = new Session(Integer.valueOf(header[0]),Integer.valueOf(header[1]),lineInput);
+		    sessions[i] = new Session(Integer.valueOf(header[0]),Integer.valueOf(header[1]),lineInput);
 			
 	    }
 	    
@@ -139,7 +140,8 @@ public class XLabBudgetLineExp extends Experiment {
 		this.y_label = y_label; this.y_units = y_units; this.y_max = y_max; this.y_min = y_min;
 		this.sessions = sessions;
 		this.activity = BudgetLineActivity.class;
-
+		this.currSession = 0;
+		this.currLine = 0;
 	}
 
 }

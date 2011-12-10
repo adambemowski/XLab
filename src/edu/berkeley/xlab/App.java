@@ -11,7 +11,8 @@ public class App extends Application {
 	public static final String TAG = "XLab-App";
 
 	private ConcurrentHashMap<Integer, Experiment> xLabExps = new ConcurrentHashMap<Integer, Experiment>();
-	public ConcurrentHashMap<Integer, Experiment> getXLabExps(){return xLabExps;} 
+	public Experiment getXLabExp(int id){return xLabExps.get(id);}
+	public ConcurrentHashMap<Integer, Experiment> getXLabExps(){return xLabExps;}	
 	public void setXLabExps(ConcurrentHashMap<Integer, Experiment> xLabExps){
 		this.xLabExps = xLabExps;
 	}

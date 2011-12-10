@@ -161,4 +161,24 @@ public class Utils {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return (R * c) * 1000;
     }
+    
+    //courtesy of http://www.javalobby.org/forums/thread.jspa?threadID=16906&tstart=0
+    public static String getOrdinalFor(int value) {
+    	 int hundredRemainder = value % 100;
+    	 int tenRemainder = value % 10;
+    	 if(hundredRemainder - tenRemainder == 10) {
+    	  return "th";
+    	 }
+    	 
+    	 switch (tenRemainder) {
+    	  case 1:
+    	   return "st";
+    	  case 2:
+    	   return "nd";
+    	  case 3:
+    	   return "rd";
+    	  default:
+    	   return "th";
+    	 }
+    	}
 }

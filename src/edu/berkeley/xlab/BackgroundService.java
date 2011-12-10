@@ -33,8 +33,24 @@ public class BackgroundService extends Service {
 	String username;
 	
 	private LocationManager locationManager;
-	private NotificationManager notificationManager;
+	private NotificationManager notificationManager;	
 	
+	private static double lastLat = 0;
+	/**
+	 * @return last latitude read
+	 */
+	public static double getLastLat() {
+		return lastLat;
+	}
+	
+	private static double lastLon = 0;
+	/**
+	 * @return last longitude read
+	 */
+	public static double getLastLon() {
+		return lastLon;
+	}
+		
 	GPSListener gpsListener;
 	long lastLocationUploadToServer = 0;
 	public enum UploadStatus {NO_ATTEMPT, SUCCESS, FAIL};
@@ -174,6 +190,8 @@ public class BackgroundService extends Service {
 		public void onLocationChanged(Location location) {
 			//DO NOT DELETE. FOR WHEN SENSOR_CHECK_INTERVAL is 0
 			Log.d(TAG, "New location: " + location.getLatitude() + location.getLongitude());
+			lastLat = location.getLatitude();
+			lastLon = location.getLatitude();
 			if (location.hasAccuracy() && (SENSOR_CHECK_INTERVAL == 0)) {
 				//Perform X-Lab checks
 				doXLabChecks(location.getLatitude(), location.getLongitude(),location.getAccuracy());						
@@ -283,7 +301,7 @@ public class BackgroundService extends Service {
 	}
 	
 	//Copy sensor code here
-	private static final long MIN_TIME_BETWEEN_ALERTS = 15 * 60 * 1000;
+	private static final long MIN_TIME_BETWEEN_ALERTS = 15 * 60 * 1000;//TODO: Change to something reasonable
 	private ConcurrentHashMap<Integer, Long> lastTime = new ConcurrentHashMap<Integer, Long>();
 
 	private void doXLabChecks(double lat, double lon, float accuracy) {
@@ -297,9 +315,9 @@ public class BackgroundService extends Service {
 			//Consider this fix only if the accuracy is at least 100% of the radius specified in the geofence
 			if(! exp.isDone() &&  (exp.getRadius() * 1.0f) >= accuracy && 
 					Utils.GetDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon) <= exp.getRadius()) {
-				Log.d(TAG,"Starting thread for " + exp.isDone());
+				Log.d(TAG,"Starting thread for " + exp.getTitle());
 				//Show a notification
-				Thread t = new Thread( new UploadXLabTask(exp, lat,lon, accuracy) );
+				Thread t = new Thread( new UploadXLabTask(exp) );
 				t.start();
 			}
 			
@@ -316,7 +334,7 @@ public class BackgroundService extends Service {
 		private NotificationManager notificationManager  = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		private Experiment exp;
 
-		public UploadXLabTask(Experiment exp, double lat, double lon, double accuracy ) {
+		public UploadXLabTask(Experiment exp) {
 			super();
 			Log.d(TAG,"In UploadXlabBL constructor");
 			this.exp = exp;
@@ -326,6 +344,7 @@ public class BackgroundService extends Service {
 		public void run() {
 			
 			try{
+				lastTime.putIfAbsent(exp.getId(), (long)0);
 				Log.d(TAG,"a" + new Long(System.currentTimeMillis()).toString());
 				Log.d(TAG,"b" + new Long(lastTime.get(exp.getId())).toString());
 				Log.d(TAG,"c" + new Long(MIN_TIME_BETWEEN_ALERTS).toString());
@@ -346,13 +365,13 @@ public class BackgroundService extends Service {
 					Context context = getApplicationContext();
 					CharSequence contentTitle = "X-Lab Alert";
 					CharSequence contentText = this.exp.getTitle();
-					Intent notificationIntent = new Intent(getApplicationContext(), BudgetLineActivity.class);
-					notificationIntent.putExtra("bl_id", this.exp.getId());
+					Intent notificationIntent = new Intent(getApplicationContext(), exp.getActivity());
+					notificationIntent.putExtra("id", this.exp.getId() + this.exp.getClassId());
 					PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 		
 					notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
 					Log.d(TAG,"UploadXlabBL notify for " + this.exp.getTitle());
-					notificationManager.cancelAll();
+					notificationManager.cancel(exp.getId());
 					notificationManager.notify(exp.getId(), notification);
 					//TODO: Figure out how to increment sessions
 					//this.xlabBL.nextCurrSession();

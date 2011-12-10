@@ -1,5 +1,7 @@
 package edu.berkeley.xlab;
 
+import java.text.DecimalFormat;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -8,10 +10,9 @@ import android.util.AttributeSet;
 import android.view.View;
 
 /** DrawView controls what is displayed on the graph portion of the screen.
-* @author John Gunnison
-*/
+ * @author John Gunnison
+ */
 public class DrawView extends View {
-
 
     public DrawView(Context context) {
         super(context);
@@ -39,6 +40,16 @@ public class DrawView extends View {
 
     /** y value of moving dot. */
     private static int dotY;
+    
+    private DecimalFormat formatter = new DecimalFormat("#.##");
+    
+    private static String xLabel;
+    
+    private static String yLabel;
+    
+    private static String xUnit;
+    
+    private static String yUnit;
 
     @Override
     public void onDraw(Canvas canvas) {
@@ -55,41 +66,48 @@ public class DrawView extends View {
         //draw the graph labels.
         paint.setTextSize(17);
         canvas.rotate(-90);
-        canvas.drawText("other stuff: " + (int) Math.round(-(slope * (dotX - 25) - y)) + " rubles", -200, 15, paint);
+        canvas.drawText(yLabel + ": " + formatter.format(BudgetLineActivity.getY()) + " " + yUnit, -200, 15, paint);
         canvas.rotate(90);
-        canvas.drawText("stuff: " + (dotX - 25) + " rubles", 80, 280, paint);
+        canvas.drawText( xLabel + ": " + formatter.format(BudgetLineActivity.getX()) + " " + xUnit, 80, 280, paint);
         
         //draw the budget line.
         paint.setColor(Color.RED);
-        canvas.drawLine(25, 250 - Math.round(y), 25 + (int) Math.round(x), 250, paint);
+        canvas.drawLine(25, 250 - (int) Math.round(y), 25 + (int) Math.round(x), 250, paint);
         
         //draw the dot.
         paint.setColor(Color.BLACK);
         canvas.drawCircle(dotX, dotY, 5, paint);
     }
+    
+    public static void setLabels(String x, String y, String xCurrency, String yCurrency) {
+        xLabel = x;
+        yLabel = y;
+        xUnit = xCurrency;
+        yUnit = yCurrency;
+    }
 
     /** Sets the x and y value of the dot.
-* @param x1 the new x value of the dot
-*/
+     * @param x1 the new x value of the dot
+     */
     public static void setDotValue(int x1) {
         dotX = x1 + 25;
         dotY = (int) (slope * (x1) + 250 - y);
     }
 
     /** Adds a value to the x coordinates and then
-* changes the y coordinate accordingly.
-* @param add amount being added to the x value of the dot.
-*/
-    public static void addToX(int add) {
+     * changes the y coordinate accordingly.
+     * @param add amount being added to the x value of the dot.
+     */
+    public static void addToX(float add) {
         dotX += add;
         dotY = (int) Math.round(slope * (dotX - 25) + 250 - y);
     }
 
     /** assigns the slope and x & y intercepts from the Draw class so
-* they can be put on the screen.
-* @param xIntercept value of the x intercept.
-* @param yIntercept value of the y intercept.
-*/
+     * they can be put on the screen.
+     * @param xIntercept value of the x intercept.
+     * @param yIntercept value of the y intercept.
+     */
     public static void loadLineValues(double xIntercept, double yIntercept) {
         x = xIntercept;
         y = yIntercept;
@@ -97,3 +115,4 @@ public class DrawView extends View {
     }
 
 }
+

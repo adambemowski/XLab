@@ -1,7 +1,8 @@
 package edu.berkeley.xlab.experiments;
 
 public class Experiment {
-	protected int id;	public int getId() {return id;}
+	protected int id; public int getId() {return id;}//Not value in HashMap, but Django identifier
+	protected int classId; public int getClassId() {return classId;}//unique value for each subclass
 	protected double lat;	public double getLat() {return lat;}
 	protected double lon;	public double getLon() {return lon;}
 	protected int radius;	public int getRadius() {return radius;}

@@ -6,9 +6,11 @@ import edu.berkeley.xlab.constants.Configuration;
 import edu.berkeley.xlab.util.Utils;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -30,8 +32,9 @@ public class BinaryQuestionActivity extends Activity implements OnClickListener 
 	private String answer;
 	private EditText etAnswer;
 	private Button btnSubmit;
-	private String username; 
-	
+	private String username;
+	private Handler handler = new Handler();
+
 	public static final String TAG = "XLab-BQ";
 	
 	
@@ -84,14 +87,10 @@ public class BinaryQuestionActivity extends Activity implements OnClickListener 
 		}
 	}
 	
-	private class PostBQ extends AsyncTask<Void, Void, String> {
+	private class PostBQ extends AsyncTask<Void, Void, Integer> {
 		
-		private int duration = Toast.LENGTH_LONG;
         private ProgressDialog dialog = new ProgressDialog(BinaryQuestionActivity.this);
         private String response;
-		private String message;
-		private Context context = getApplicationContext();
-		private Toast toast;
 
 		@Override
 		protected void onPreExecute() {
@@ -101,41 +100,68 @@ public class BinaryQuestionActivity extends Activity implements OnClickListener 
 	    }
 		
 		@Override	
-	    protected String doInBackground(Void... whatever) {
+	    protected Integer doInBackground(Void... whatever) {
 			
+			int status = 0;
 			
 			try {
-				
-				response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BQ + "?bq_id=" + bqId + "&bq_response=" + URLEncoder.encode(answer, "utf-8") + "&bq_username=" + username);
-				Log.d(TAG, response);
+				response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BQ + "?bq_id=" + bqId + "&bq_response=" + URLEncoder.encode(answer, "utf-8") + "&bq_username=" + username + "&bq_lat=" + BackgroundService.getLastLat() + "&bq_lon=" + BackgroundService.getLastLon());
 				
 				if(null == response) {
 					//TODO: Check for response and retry if it failed
 					Log.e(TAG, "Received null response");
-					message = "Sorry, an error occurred!";
 				} else if(response.equalsIgnoreCase("1")) {
 					Log.d(TAG, "Received response from server - " + response);
-					message = "Thank you for your response.";
+					status = 1;
 				} else if(response.equalsIgnoreCase("0")) {
 					Log.d(TAG, "Received response from server - " + response);
-					message = "Sorry, an error occurred!";
 				}
 				
 			} catch (Exception e) {
 				Log.e(TAG, e.toString());
 			}
 	        
-	        return message;
+	        return status;
 	    }
 		
 		@Override
-		protected void onPostExecute(String message) {
-			Log.d(TAG,"In onPostExecute");
+		protected void onPostExecute(Integer status) {
+			Log.d(TAG, "In onPostExecute");
 			dialog.dismiss();
-			toast = Toast.makeText(context, message, duration);
-			toast.setGravity(Gravity.CENTER, 0,0);
-			toast.show();
-		}
-	    	    
+			if (status == 1) {
+				handler.post(new Runnable() {
+					@Override
+					public void run() {
+						AlertDialog.Builder builder = new AlertDialog.Builder(BinaryQuestionActivity.this);
+						builder.setMessage("Thank you. Your message was received.");
+						builder.setNeutralButton("OK",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int id) {
+				                BinaryQuestionActivity.this.finish();
+							}
+						});
+						AlertDialog alert = builder.create();
+						alert.show();
+					}
+				});
+			} else {
+				handler.post(new Runnable() {
+					AlertDialog.Builder builder = new AlertDialog.Builder(BinaryQuestionActivity.this);
+
+					@Override
+					public void run() {
+						builder.setMessage("Sorry. Your message was not received.");
+						builder.setNeutralButton("OK",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int id) {
+				                BinaryQuestionActivity.this.finish();
+							}
+						});
+						AlertDialog alert = builder.create();
+						alert.show();
+					}
+				});
+			}
+		}	    
 	}
 }
