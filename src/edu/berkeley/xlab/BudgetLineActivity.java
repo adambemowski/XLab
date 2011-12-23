@@ -1,6 +1,5 @@
 package edu.berkeley.xlab;
 
-import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.ArrayList;
@@ -8,7 +7,6 @@ import java.util.ArrayList;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -16,14 +14,12 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import edu.berkeley.xlab.constants.Configuration;
 import edu.berkeley.xlab.experiments.*;
@@ -38,8 +34,14 @@ import edu.berkeley.xlab.util.Utils;
 public class BudgetLineActivity extends Activity implements
 		SeekBar.OnSeekBarChangeListener, OnClickListener, OnTouchListener {
 
-	/** BL_AVTIVITY_TAG is an identifier for the log. */
+	/** TAG is an identifier for the log. */
 	static final String TAG = "XLab-BL";
+
+	/** exp is the XLabBudgetLineExp. */
+	private XLabBudgetLineExp exp;
+
+	/** status is the the flag for the unload. Equals 0 if failure, 1 otherwise. */
+	private int status;
 
 	/** _progress is the current value of the slider. */
 	private static int _progress;
@@ -71,16 +73,12 @@ public class BudgetLineActivity extends Activity implements
 	/** for http post, defined in onCreate */
 	private String username;
 
-	/** for upload dialogs */
-	private String message;
-
 	/** record of lines and intercepts chosen for post */
 	private ArrayList<Float> x_ints = new ArrayList<Float>();
 	private ArrayList<Float> y_ints = new ArrayList<Float>();
-	private ArrayList<Float> x_chosen = new ArrayList<Float>();
-	private ArrayList<Float> y_chosen = new ArrayList<Float>();
+	private ArrayList<Float> x_chosens = new ArrayList<Float>();
+	private ArrayList<Float> y_chosens = new ArrayList<Float>();
 
-	private XLabBudgetLineExp exp;
 	private DecimalFormat formatter = new DecimalFormat("#.##");
 
 	/** Called when the activity is first created. */
@@ -157,10 +155,10 @@ public class BudgetLineActivity extends Activity implements
 	@Override
 	public void onClick(View v) {
 		if (v.getId() == R.id.select_button) {
-			x_ints.add(this.x);
-			y_ints.add(this.y);
-			x_chosen.add(getX());
-			y_chosen.add(getY());
+			x_ints.add(x);
+			y_ints.add(y);
+			x_chosens.add(getX());
+			y_chosens.add(getY());
 			exp.nextLine();
 			if (exp.getCurrLine() == 0) {
 				int lineChosen = exp.getSession(exp.getCurrSession() - 1)
@@ -341,9 +339,7 @@ public class BudgetLineActivity extends Activity implements
 
 	private class PostBL extends AsyncTask<Void, Void, Integer> {
 
-		private ProgressDialog dialog = new ProgressDialog(
-				BudgetLineActivity.this);
-		private String response;
+		private ProgressDialog dialog = new ProgressDialog(BudgetLineActivity.this);
 
 		@Override
 		protected void onPreExecute() {
@@ -354,38 +350,15 @@ public class BudgetLineActivity extends Activity implements
 
 		@Override
 		protected Integer doInBackground(Void... whatever) {
-
-			int status = 0;
 			
-			try {
-				Log.d(TAG,Configuration.XLAB_API_ENDPOINT_BL
-						+ "?bl_id=" + bl_Id + "&bl_username=" + username
-						+ "&bl_lat=" + BackgroundService.getLastLat()
-						+ "&bl_lon=" + BackgroundService.getLastLon()
-						+ "&bl_x_intercept=" + x + "&bl_y_intercept=" + y
-						+ "&bl_x=" + getX() + "&bl_y=" + getY());
-				response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BL
-						+ "?bl_id=" + bl_Id + "&bl_username=" + username
-						+ "&bl_lat=" + BackgroundService.getLastLat()
-						+ "&bl_lon=" + BackgroundService.getLastLon()
-						+ "&bl_x_intercept=" + x + "&bl_y_intercept=" + y
-						+ "&bl_x=" + getX() + "&bl_y=" + getY());
-
-				if(null == response) {
-					//TODO: Check for response and retry if it failed
-					Log.e(TAG, "Received null response");
-				} else if(response.equalsIgnoreCase("1")) {
-					Log.d(TAG, "Received response from server - " + response);
-					status = 1;
-				} else if(response.equalsIgnoreCase("0")) {
-					Log.d(TAG, "Received response from server - " + response);
-				}
-				
-			} catch (Exception e) {
-				Log.e(TAG, e.toString());
+			status = 1;
+			
+			for (int i = 0; i < x_ints.size(); i++) {
+				new Thread( new UploadSingleBL(x_ints.get(i),y_ints.get(i),x_chosens.get(i),y_chosens.get(i)) ).start();
 			}
-	        
-	        return status;
+			
+			return status;
+			
 	    }
 		
 		@Override
@@ -397,7 +370,7 @@ public class BudgetLineActivity extends Activity implements
 					@Override
 					public void run() {
 						AlertDialog.Builder builder = new AlertDialog.Builder(BudgetLineActivity.this);
-						builder.setMessage("Thank you. Your message was received.");
+						builder.setMessage("Thank you. Your budget lines were received.");
 						builder.setNeutralButton("OK",
 						new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int id) {
@@ -429,6 +402,62 @@ public class BudgetLineActivity extends Activity implements
 		}	    
 	}
 
+	class UploadSingleBL implements Runnable {
+		
+		private String response;
+		private float x_int;
+		private float y_int;
+		private float x_chosen;
+		private float y_chosen;
+		
+		
+		public UploadSingleBL(float x_int, float y_int, float x_chosen, float y_chosen) {
+			super();
+			Log.d(TAG,"In UploadSingleBL constructor");
+			this.x_int = x_int;
+			this.y_int = y_int;
+			this.x_chosen = x_chosen;
+			this.y_chosen = y_chosen;
+		}
+
+		@Override
+		public void run() {
+			
+			try {
+				Log.d(TAG,Configuration.XLAB_API_ENDPOINT_BL
+						+ "?bl_id=" + bl_Id + "&bl_username=" + username
+						+ "&bl_lat=" + BackgroundService.getLastLat()
+						+ "&bl_lon=" + BackgroundService.getLastLon()
+						+ "&bl_x_intercept=" + x_int + "&bl_y_intercept=" + y_int
+						+ "&bl_x=" + x_chosen + "&bl_y=" + y_chosen);
+				response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BL
+						+ "?bl_id=" + bl_Id + "&bl_username=" + username
+						+ "&bl_lat=" + BackgroundService.getLastLat()
+						+ "&bl_lon=" + BackgroundService.getLastLon()
+						+ "&bl_x_intercept=" + x_int + "&bl_y_intercept=" + y_int
+						+ "&bl_x=" + x_chosen + "&bl_y=" + y_chosen);
+
+				if(null == response) {
+					//TODO: Check for response and retry if it failed
+					Log.e(TAG, "Received null response");
+					status = status * 0;
+				} else if(response.equalsIgnoreCase("1")) {
+					Log.d(TAG, "Received response from server - " + response);
+					status = status * 1;
+				} else if(response.equalsIgnoreCase("0")) {
+					Log.d(TAG, "Received response from server - " + response);
+					status = status * 0;
+				}
+				
+			} catch (Exception e) {
+				Log.e(TAG, e.toString());
+			}
+	        	    			
+		}
+
+	}
+
+	
 	/**
 	 * Converts current SeekBar progress value to X-axis label
 	 * 
