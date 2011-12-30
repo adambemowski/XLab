@@ -53,7 +53,6 @@ import edu.berkeley.xlab.BudgetLineActivity;
 public class XLabBudgetLineExp extends Experiment {
 
 	public static final String TAG = "X-Lab - XLabBudgetLineExp";
-	public static final int CONSTANT_ID = 0;
 
 	private boolean probabilistic; public boolean getProbabilistic() {return probabilistic;}
 	private double prob_x; public double getProb_x() {return prob_x;}
@@ -98,24 +97,24 @@ public class XLabBudgetLineExp extends Experiment {
 		String[] header = ses[0].split(",");
 		
 		int id = Integer.valueOf(header[0]);
-		this.classId = CONSTANT_ID;
 		String title = header[1];
-		double lat = Double.valueOf(header[2]);
-		double lon = Double.valueOf(header[3]);
-		int radius = Integer.valueOf(header[4]);
+		String location = header[2];
+		double lat = Double.valueOf(header[3]);
+		double lon = Double.valueOf(header[4]);
+		int radius = Integer.valueOf(header[5]);
 		
-		boolean probabilistic = ((header[5] == "1") ? true : false);
-		double prob_x = Double.valueOf(header[6]);
+		boolean probabilistic = ((header[6] == "1") ? true : false);
+		double prob_x = Double.valueOf(header[7]);
 		
-	    String x_label = header[7];
-	    String x_units = header[8];
-	    float x_max = Float.valueOf(header[9]);
-	    float x_min = Float.valueOf(header[10]);
+	    String x_label = header[8];
+	    String x_units = header[9];
+	    float x_max = Float.valueOf(header[10]);
+	    float x_min = Float.valueOf(header[11]);
 	    
-	    String y_label = header[11];
-	    String y_units = header[12];
-	    float y_max = Float.valueOf(header[13]);
-	    float y_min = Float.valueOf(header[14]);
+	    String y_label = header[12];
+	    String y_units = header[13];
+	    float y_max = Float.valueOf(header[14]);
+	    float y_min = Float.valueOf(header[15]);
 	    		    
 	    for (int i = 0; i < sessions.length; i++) {
 	    	
@@ -134,7 +133,7 @@ public class XLabBudgetLineExp extends Experiment {
 	    }
 	    
 		this.id = id; this.title = title;
-		this.lat = lat; this.lon = lon; this.radius = radius;
+		this.location = location; this.lat = lat; this.lon = lon; this.radius = radius;
 		this.probabilistic = probabilistic; this.prob_x = prob_x;
 		this.x_label = x_label; this.x_units = x_units; this.x_max = x_max; this.x_min = x_min;
 		this.y_label = y_label; this.y_units = y_units; this.y_max = y_max; this.y_min = y_min;

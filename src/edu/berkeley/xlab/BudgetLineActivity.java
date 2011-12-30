@@ -1,12 +1,17 @@
 package edu.berkeley.xlab;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.ArrayList;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -24,7 +29,7 @@ import android.widget.TextView;
 import edu.berkeley.xlab.constants.Configuration;
 import edu.berkeley.xlab.experiments.*;
 import edu.berkeley.xlab.util.Utils;
-//ADAM: Important too
+
 /**
  * Draw is an activity that controls choosing a point on a line and recording
  * that choice.
@@ -73,12 +78,19 @@ public class BudgetLineActivity extends Activity implements
 	/** for http post, defined in onCreate */
 	private String username;
 
-	/** record of lines and intercepts chosen for post */
+	/** record of x intercepts for post */
 	private ArrayList<Float> x_ints = new ArrayList<Float>();
+
+	/** record of y intercepts for post */
 	private ArrayList<Float> y_ints = new ArrayList<Float>();
+
+	/** record of x coordinates chosen for post */	
 	private ArrayList<Float> x_chosens = new ArrayList<Float>();
+
+	/** record of y coordinates chosen for post */	
 	private ArrayList<Float> y_chosens = new ArrayList<Float>();
 
+	/** decimal formatter */
 	private DecimalFormat formatter = new DecimalFormat("#.##");
 
 	/** Called when the activity is first created. */
@@ -129,6 +141,67 @@ public class BudgetLineActivity extends Activity implements
 				"anonymous");
 
 		displayNewLine();
+	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		
+		Log.d(TAG,"In onSaveInstanceState");
+
+		float[] x_intsArray = new float[x_ints.size()];
+		float[] y_intsArray = new float[y_ints.size()];
+		float[] x_chosensArray = new float[x_chosens.size()];
+		float[] y_chosensArray = new float[y_chosens.size()];
+		
+		for (int i = 0; i < x_ints.size(); i++) {
+			x_intsArray[i] = x_ints.get(i);
+			y_intsArray[i] = y_ints.get(i);
+			x_chosensArray[i] = x_chosens.get(i);
+			y_chosensArray[i] = y_chosens.get(i);
+		}
+		
+		savedInstanceState.putFloatArray("x_ints", x_intsArray);
+		savedInstanceState.putFloatArray("y_ints", y_intsArray);
+		savedInstanceState.putFloatArray("x_chosens", x_chosensArray);
+		savedInstanceState.putFloatArray("y_chosens", y_chosensArray);
+		
+		savedInstanceState.putInt("id", bl_Id);
+		
+		super.onSaveInstanceState(savedInstanceState);
+	}
+	
+	@Override
+	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		
+		Log.d(TAG,"In onSaveInstanceState");
+
+		super.onRestoreInstanceState(savedInstanceState);
+		
+		float[] x_intsArray = savedInstanceState.getFloatArray("x_ints");
+		float[] y_intsArray = savedInstanceState.getFloatArray("y_ints");
+		float[] x_chosensArray = savedInstanceState.getFloatArray("x_chosens");
+		float[] y_chosensArray = savedInstanceState.getFloatArray("y_chosens");
+
+		for (int i = 0; i < x_intsArray.length; i++) {
+			x_ints.add(x_intsArray[i]);
+			y_ints.add(y_intsArray[i]);
+			x_chosens.add(x_chosensArray[i]);
+			y_chosens.add(y_chosensArray[i]);
+		}
+		
+		if (bl_Id != savedInstanceState.getInt("id")) {
+			AlertDialog.Builder builder = new AlertDialog.Builder(BudgetLineActivity.this);				
+			builder.setMessage("You must complete your last survey before answering this one");
+			builder.setNeutralButton("Back to Menu",
+			new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					startActivity( new Intent(getApplicationContext(), MainActivity.class) );
+				}
+			});
+			AlertDialog alert = builder.create();
+			alert.show();			
+		}
+		
 	}
 
 	@Override
@@ -374,7 +447,7 @@ public class BudgetLineActivity extends Activity implements
 						builder.setNeutralButton("OK",
 						new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int id) {
-				                BudgetLineActivity.this.finish();
+								startActivity( new Intent(getApplicationContext(), MainActivity.class) );
 							}
 						});
 						AlertDialog alert = builder.create();
@@ -391,7 +464,7 @@ public class BudgetLineActivity extends Activity implements
 						builder.setNeutralButton("OK",
 						new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int id) {
-				                BudgetLineActivity.this.finish();
+								startActivity( new Intent(getApplicationContext(), MainActivity.class) );
 							}
 						});
 						AlertDialog alert = builder.create();
@@ -529,5 +602,27 @@ public class BudgetLineActivity extends Activity implements
 		yValue.setText(getYLabel());
 		layout.invalidate();
 	}
+	
+	private void writeToFile(String fileName, String str) throws IOException {
 
+		FileOutputStream fos = openFileOutput(fileName, Context.MODE_PRIVATE);
+		fos.write(str.getBytes());
+		fos.close();
+
+	}
+	
+	private String readFromFile(String fileName) throws IOException {
+		StringBuilder strContent = new StringBuilder("");
+		int ch;
+		FileInputStream fin = openFileInput(fileName);
+		
+		while ((ch = fin.read()) != -1) {
+			strContent.append((char)ch);
+		}
+		fin.close();
+		
+		return strContent.toString();		
+		
+	}
+	
 }

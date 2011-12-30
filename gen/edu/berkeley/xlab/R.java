@@ -12,17 +12,22 @@ public final class R {
     }
     public static final class drawable {
         public static final int androidmarker=0x7f020000;
-        public static final int icon=0x7f020001;
+        public static final int ic_bl=0x7f020001;
+        public static final int ic_bq=0x7f020002;
+        public static final int ic_launcher=0x7f020003;
+        public static final int ic_stat_x_notification=0x7f020004;
+        public static final int icon=0x7f020005;
     }
     public static final class id {
-        public static final int TextView01=0x7f060011;
         public static final int answer=0x7f060002;
-        public static final int debugBL=0x7f060014;
-        public static final int debugBQ=0x7f060015;
-        public static final int download=0x7f060012;
-        public static final int gpsToggle=0x7f060013;
+        public static final int debugBL=0x7f060015;
+        public static final int debugBQ=0x7f060016;
+        public static final int download=0x7f060013;
+        public static final int gpsToggle=0x7f060014;
+        public static final int img=0x7f060011;
         public static final int layout=0x7f060000;
         public static final int left_button=0x7f06000a;
+        public static final int location=0x7f060012;
         public static final int login_button=0x7f060010;
         public static final int password=0x7f06000f;
         public static final int question=0x7f060001;

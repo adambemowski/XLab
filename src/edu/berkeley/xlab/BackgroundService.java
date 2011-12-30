@@ -1,13 +1,9 @@
 package edu.berkeley.xlab;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledThreadPoolExecutor;  
-import java.util.concurrent.TimeUnit;  
 
 import edu.berkeley.xlab.constants.Configuration;
 import edu.berkeley.xlab.experiments.*;
@@ -36,6 +32,7 @@ public class BackgroundService extends Service {
 	private NotificationManager notificationManager;	
 	
 	private static double lastLat = 0;
+	
 	/**
 	 * @return last latitude read
 	 */
@@ -226,19 +223,6 @@ public class BackgroundService extends Service {
 		}
 	}
 		
-	private String readFromFile(String fileName) throws IOException {
-		StringBuilder strContent = new StringBuilder("");
-		int ch;
-		FileInputStream fin = openFileInput(fileName);
-		
-		while ((ch = fin.read()) != -1) {
-			strContent.append((char)ch);
-		}
-		fin.close();
-		
-		return strContent.toString();		
-	}
-	
 	private String getLocationDataAsString(Location l) {
 		//Format - identifier, platform, lat, lon, gps_time, sample_time, velocity, 
 		//	haccuracy, vaccuracy, altitude, course, hdop, vdop, service_provider, has_speed, 
@@ -283,7 +267,7 @@ public class BackgroundService extends Service {
 	 * Display a notification to the user if the GPS sensor is switched off
 	 */
 	private void notifyOnLocationDisable() {
-		int icon = R.drawable.androidmarker;
+		int icon = R.drawable.ic_stat_x_notification;
 		CharSequence tickerText = "XLab needs access to location";
 		long when = System.currentTimeMillis();
 
@@ -351,7 +335,7 @@ public class BackgroundService extends Service {
 				if (System.currentTimeMillis() - lastTime.get(exp.getId()) > MIN_TIME_BETWEEN_ALERTS) {
 					
 					lastTime.put(exp.getId(), System.currentTimeMillis());
-					int icon = R.drawable.androidmarker;
+					int icon = R.drawable.ic_stat_x_notification;
 					CharSequence tickerText = "X-Lab Alert";
 					long when = System.currentTimeMillis();
 					
@@ -366,7 +350,6 @@ public class BackgroundService extends Service {
 					CharSequence contentTitle = "X-Lab Alert";
 					CharSequence contentText = this.exp.getTitle();
 					Intent notificationIntent = new Intent(getApplicationContext(), exp.getActivity());
-					notificationIntent.putExtra("id", this.exp.getId() + this.exp.getClassId());
 					PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 		
 					notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);

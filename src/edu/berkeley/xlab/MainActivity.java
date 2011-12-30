@@ -1,5 +1,6 @@
 package edu.berkeley.xlab;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -8,7 +9,7 @@ import edu.berkeley.xlab.constants.Configuration;
 import edu.berkeley.xlab.experiments.*;
 import edu.berkeley.xlab.util.Utils;
 
-import android.app.Activity;
+import android.app.ListActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -22,79 +23,89 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.TextView;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.SimpleAdapter;
+import android.widget.AdapterView.OnItemClickListener;
 
-public class MainActivity extends Activity {
+public class MainActivity extends ListActivity {
 
 	public static final String TAG = "XLab-MAIN";
 	private boolean backgroundRunning = false;
-	private TextView textView;
+	private boolean uploaded = false;
 	private MenuInflater inflater = getMenuInflater();
 
-
-	// private ProgressDialog mSplashDialog = new
-	// ProgressDialog(getApplicationContext());
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		Log.d(TAG, "In MainActivity -- OnCreate");
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main);
-		textView = (TextView) findViewById(R.id.TextView01);
-		new FetchXLabTask().execute();
+		if (!uploaded) {
+			new FetchXLabTask().execute();
+		} else {
+			populateListView();
+		}
+	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		Log.d(TAG,"In onSaveInstanceState");
+		savedInstanceState.putBoolean("uploaded", uploaded);
+		super.onSaveInstanceState(savedInstanceState);
 	}
 
+	@Override
+	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		Log.d(TAG,"In onRestoreInstanceState");
+		super.onRestoreInstanceState(savedInstanceState);
+		uploaded = savedInstanceState.getBoolean("uploaded");
+	}
+	
 	/**
 	 * Fetch XLab tasks from the server
 	 * 
 	 * @author Daniel Vizzini
 	 */
-	private class FetchXLabTask extends AsyncTask<Void, Void, String> {
+	private class FetchXLabTask extends AsyncTask<Void, Void, Void> {
+
+		private App appState = ((App) getApplicationContext());
+		private ConcurrentHashMap<Integer, Experiment> xLabExps = appState.getXLabExps();
+
+		private ProgressDialog dialog = new ProgressDialog(MainActivity.this);
 
 		@Override
 		protected void onPreExecute() {
 
-			Log.d(TAG,
-					"In MainActivity -- FetchXLabTask -- onPreExecute");
+			Log.d(TAG, "In MainActivity -- FetchXLabTask -- onPreExecute");
 
-			// mSplashDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-			// mSplashDialog.setMessage("XLab is Loading...");
-			// mSplashDialog.setCancelable(false);
-			// mSplashDialog.show();
+			dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+			dialog.setMessage("XLab is loading...");
+			dialog.show();
 		}
 
-		protected String doInBackground(Void... voids) {
+		protected Void doInBackground(Void... voids) {
 
 			Log.d(TAG,"In MainActivity -- FetchXLabTask -- doInBackground");
 
-			String message = "Welcome to XLab.\nA nifty menu is coming soon.\n";
-
 			try {
-				App appState = ((App) getApplicationContext());
 				String responseBQ = Utils
 						.getData(Configuration.XLAB_API_ENDPOINT_BQ);
 				Log.d(TAG, responseBQ);
-
-				// X-Lab related...
-				ConcurrentHashMap<Integer, Experiment> xLabExps = appState.getXLabExps();
 
 				if (null != responseBQ) {
 
 					// Parse the response
 					String[] geofencesBQ = responseBQ.split("\n");
-					message += "\nYou have received " + geofencesBQ.length
-							+ " question" + ((geofencesBQ.length != 1)?"s":"") + ".\nYour phone currently contains:\n\n";
 
 					for (String line : geofencesBQ) {
 
 						XLabBinaryQuestion bq = new XLabBinaryQuestion(line);
 						int id = bq.getId();
-						message += bq.getTitle() + "\n";
 
 						// TODO: The xLabBinaryQuestions map will keep growing
 						// if we do this.
 						// Clear old values.
-						xLabExps.putIfAbsent(XLabBinaryQuestion.CONSTANT_ID + id, bq);
+						xLabExps.putIfAbsent(id, bq);
 					}
 				}
 
@@ -105,17 +116,13 @@ public class MainActivity extends Activity {
 
 					// Parse the response
 					String[] geofencesBL = responseBL.split("\n");
-					message += "\nYou have received "
-							+ geofencesBL.length
-							+ " budget line" + ((geofencesBL.length != 1)?"s":"") + ".\nYour phone currently contains:\n\n";
 
 					for (String exp : geofencesBL) {
 
 						XLabBudgetLineExp bl = new XLabBudgetLineExp(exp);
-						message += bl.getTitle() + "\n";
 						Log.d(TAG, bl.getTitle());
 
-						xLabExps.putIfAbsent(XLabBudgetLineExp.CONSTANT_ID + bl.getId(), bl);
+						xLabExps.putIfAbsent(bl.getId(), bl);
 
 					}
 					// TODO: The xLabBinaryQuestions map will keep growing if we
@@ -131,23 +138,25 @@ public class MainActivity extends Activity {
 				Log.e(TAG, e.toString());
 			}
 
-			return message;
-
+			return null;
+			
 		}
 
 		@Override
-		protected void onPostExecute(String message) {
+		protected void onPostExecute(Void voids) {
 
 			Log.d(TAG,"In MainActivity -- FetchXLabTask -- onPostActivity");
-
-			textView.setText(message);
+			dialog.dismiss();
+			populateListView(); 
+			uploaded = true;
+			
 		}
 	}
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		backgroundRunning = true;
-	    inflater.inflate(R.menu.menu, menu);
+		inflater.inflate(R.menu.menu, menu);
 	    return true;
 	}	
 
@@ -179,14 +188,67 @@ public class MainActivity extends Activity {
 				doXLabChecks(37.87213, -122.25787,10);
 				return true;
 			case R.id.debugBQ:
-				doXLabChecks(37.875576,-122.260841,10);
+				doXLabChecks(37.87557,-122.260108,10);
 				return true;
 			default:
 				return super.onOptionsItemSelected(item);
 	    }
 	}
 	
-	//TODO: After working, copy following classes ingo BackgroundService and delete
+	/**
+	 * Populate ListView
+	 *
+	 * @author Daniel Vizzini
+	 * 
+	 * Big up http://www.tutomobile.fr/personnaliser-une-listview-tutoriel-android-n%C2%B07/04/07/2010/ 
+	 */
+	private void populateListView() {
+		
+		App appState = ((App) getApplicationContext());
+		final ConcurrentHashMap<Integer, Experiment> xLabExps = appState.getXLabExps();
+		ArrayList<ConcurrentHashMap<String, String>> listItem = new ArrayList<ConcurrentHashMap<String, String>>();			 
+	    ConcurrentHashMap<String, String> map;
+		final int[] ids = new int[xLabExps.size()];
+		int i = 0;
+	    
+	    for (Experiment exp : xLabExps.values()) {
+		    map = new ConcurrentHashMap<String, String>();
+		    map.put("title", exp.getTitle());
+		    map.put("location", exp.getLocation());
+		    Log.d(TAG,exp.getActivity().getName());
+		    Log.d(TAG,BinaryQuestionActivity.class.getName());
+		    Log.d(TAG,String.valueOf(exp.getActivity().getName().equals(BinaryQuestionActivity.class.getName())));
+		    Log.d(TAG,BudgetLineActivity.class.getName());
+		    Log.d(TAG,String.valueOf(exp.getActivity().getName().equals(BudgetLineActivity.class.getName())));
+		    if (exp.getActivity().getName().equals(BinaryQuestionActivity.class.getName())) {
+		    	Log.d(TAG,"ic_bq");
+		    	map.put("img", String.valueOf(R.drawable.ic_bq));
+		    } else if (exp.getActivity().getName().equals(BudgetLineActivity.class.getName())) {
+		    	Log.d(TAG,"ic_bl");
+		    	map.put("img", String.valueOf(R.drawable.ic_bl));
+		    }
+		    listItem.add(map);		    	
+			ids[i] = exp.getId();
+			i++;
+	    }
+
+	    setListAdapter(new SimpleAdapter (this.getBaseContext(), listItem, R.layout.main, new String[] {"img", "title", "location"}, new int[] {R.id.img, R.id.title, R.id.location}));
+	    
+		getListView().setOnItemClickListener(new OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				
+				Intent intent = new Intent(getApplicationContext(), xLabExps.get(ids[position]).getActivity());
+				intent.putExtra("id", ids[position]);
+				
+				startActivity(intent);
+				
+		    }
+		});		
+	}
+
+	//TODO: After working, copy following classes into BackgroundService and delete
 	//DV: For Debugging. Will only be in BackgroundService in Production Version
 	//Notification ID
 	private static final long MIN_TIME_BETWEEN_ALERTS = 0;//15 * 60 * 1000;//TODO: Change to something reasonable
@@ -205,7 +267,7 @@ public class MainActivity extends Activity {
 					Utils.GetDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon) <= exp.getRadius()) {
 				Log.d(TAG,"Starting thread for " + exp.getTitle());
 				//Show a notification
-				Thread t = new Thread( new UploadXLabTask(exp) );
+				Thread t = new Thread( new UploadXLabTask(exp,false) );
 				t.start();
 			}
 			
@@ -221,11 +283,13 @@ public class MainActivity extends Activity {
 	private class UploadXLabTask implements Runnable {
 		private NotificationManager notificationManager  = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		private Experiment exp;
+		private boolean timed;
 
-		public UploadXLabTask(Experiment exp) {
+		public UploadXLabTask(Experiment exp, boolean timed) {
 			super();
-			Log.d(TAG,"In UploadXlabBL constructor");
+			Log.d(TAG,"In UploadXlabBL constructor without default timed");
 			this.exp = exp;
+			this.timed = timed;
 		}
 
 		@Override
@@ -236,14 +300,14 @@ public class MainActivity extends Activity {
 				Log.d(TAG,"a" + new Long(System.currentTimeMillis()).toString());
 				Log.d(TAG,"b" + new Long(lastTime.get(exp.getId())).toString());
 				Log.d(TAG,"c" + new Long(MIN_TIME_BETWEEN_ALERTS).toString());
-				if (System.currentTimeMillis() - lastTime.get(exp.getId()) > MIN_TIME_BETWEEN_ALERTS) {
+				if (!timed || (System.currentTimeMillis() - lastTime.get(exp.getId()) > MIN_TIME_BETWEEN_ALERTS)) {
 					
 					lastTime.put(exp.getId(), System.currentTimeMillis());
-					int icon = R.drawable.androidmarker;
+					int icon = R.drawable.ic_stat_x_notification;
 					CharSequence tickerText = "X-Lab Alert";
 					long when = System.currentTimeMillis();
 					
-					Log.d(TAG,"Running UploadXlabBL");
+					Log.d(TAG,"Running UploadXlab");
 					Notification notification = new Notification(icon, tickerText, when);
 					notification.flags = Notification.FLAG_AUTO_CANCEL;
 					notification.defaults |= Notification.DEFAULT_SOUND;
@@ -254,19 +318,17 @@ public class MainActivity extends Activity {
 					CharSequence contentTitle = "X-Lab Alert";
 					CharSequence contentText = this.exp.getTitle();
 					Intent notificationIntent = new Intent(getApplicationContext(), exp.getActivity());
-					notificationIntent.putExtra("id", this.exp.getId() + this.exp.getClassId());
+					notificationIntent.putExtra("id", this.exp.getId());
 					PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 		
 					notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
-					Log.d(TAG,"UploadXlabBL notify for " + this.exp.getTitle());
+					Log.d(TAG,"UploadXlab notify for " + this.exp.getTitle());
 					notificationManager.cancel(exp.getId());
 					notificationManager.notify(exp.getId(), notification);
-					//TODO: Figure out how to increment sessions
-					//this.xlabBL.nextCurrSession();
 
 				}
 			}
 			catch(Exception e){}
 		}
-	}
+	}	
 }
