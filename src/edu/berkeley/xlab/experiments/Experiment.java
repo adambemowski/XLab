@@ -1,6 +1,6 @@
 package edu.berkeley.xlab.experiments;
 
-public class Experiment {
+public abstract class Experiment {
 	protected int id; public int getId() {return id;}
 	protected String location; public String getLocation() {return location;}
 	protected double lat;	public double getLat() {return lat;}

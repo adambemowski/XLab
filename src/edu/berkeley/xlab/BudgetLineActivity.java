@@ -3,10 +3,18 @@ package edu.berkeley.xlab;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.DecimalFormat;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+import com.google.gson.Gson;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -34,7 +42,7 @@ import edu.berkeley.xlab.util.Utils;
  * Draw is an activity that controls choosing a point on a line and recording
  * that choice.
  * 
- * @author John Gunnison
+ * @author John Gunnison and Daniel Vizzini
  */
 public class BudgetLineActivity extends Activity implements
 		SeekBar.OnSeekBarChangeListener, OnClickListener, OnTouchListener {
@@ -44,6 +52,9 @@ public class BudgetLineActivity extends Activity implements
 
 	/** exp is the XLabBudgetLineExp. */
 	private XLabBudgetLineExp exp;
+
+	/** probabilistic is true if the experiment is probabilistic, false otherwise */
+	private Boolean probabilistic = exp.getProbabilistic();
 
 	/** status is the the flag for the unload. Equals 0 if failure, 1 otherwise. */
 	private int status;
@@ -79,17 +90,8 @@ public class BudgetLineActivity extends Activity implements
 	private String username;
 
 	/** record of x intercepts for post */
-	private ArrayList<Float> x_ints = new ArrayList<Float>();
-
-	/** record of y intercepts for post */
-	private ArrayList<Float> y_ints = new ArrayList<Float>();
-
-	/** record of x coordinates chosen for post */	
-	private ArrayList<Float> x_chosens = new ArrayList<Float>();
-
-	/** record of y coordinates chosen for post */	
-	private ArrayList<Float> y_chosens = new ArrayList<Float>();
-
+	private ArrayList<ConcurrentHashMap<String,Object>> chosens = new ArrayList<ConcurrentHashMap<String,Object>>();
+	
 	/** decimal formatter */
 	private DecimalFormat formatter = new DecimalFormat("#.##");
 
@@ -144,71 +146,80 @@ public class BudgetLineActivity extends Activity implements
 	}
 	
 	@Override
-	public void onSaveInstanceState(Bundle savedInstanceState) {
+	public void onPause() {
 		
-		Log.d(TAG,"In onSaveInstanceState");
+		Log.d(TAG,"In onPause");
 
-		float[] x_intsArray = new float[x_ints.size()];
-		float[] y_intsArray = new float[y_ints.size()];
-		float[] x_chosensArray = new float[x_chosens.size()];
-		float[] y_chosensArray = new float[y_chosens.size()];
+		String FILENAME = "current_activity";
+		JSONObject currentActivity = new JSONObject();
+		JSONArray chosensJSON = new JSONArray();
 		
-		for (int i = 0; i < x_ints.size(); i++) {
-			x_intsArray[i] = x_ints.get(i);
-			y_intsArray[i] = y_ints.get(i);
-			x_chosensArray[i] = x_chosens.get(i);
-			y_chosensArray[i] = y_chosens.get(i);
+		try {
+		    currentActivity.put("id", bl_Id);
+		    currentActivity.put("current_x",getX());
+		    currentActivity.put("current_y",getY());
+		    for (ConcurrentHashMap<String, Object> chosen : chosens){
+				chosensJSON.put(chosen);
+			}
+			currentActivity.put("results", chosensJSON);
+			FileOutputStream fos = openFileOutput(FILENAME, Context.MODE_PRIVATE);
+			fos.write(currentActivity.toString().getBytes());
+			fos.close();
+		} catch (Exception e) {
+			Log.d(TAG, "fos exception caught");
+			e.printStackTrace();
 		}
-		
-		savedInstanceState.putFloatArray("x_ints", x_intsArray);
-		savedInstanceState.putFloatArray("y_ints", y_intsArray);
-		savedInstanceState.putFloatArray("x_chosens", x_chosensArray);
-		savedInstanceState.putFloatArray("y_chosens", y_chosensArray);
-		
-		savedInstanceState.putInt("id", bl_Id);
-		
-		super.onSaveInstanceState(savedInstanceState);
 	}
 	
 	@Override
-	public void onRestoreInstanceState(Bundle savedInstanceState) {
+	public void onResume() {
 		
-		Log.d(TAG,"In onSaveInstanceState");
-
-		super.onRestoreInstanceState(savedInstanceState);
+		Log.d(TAG,"In onResume");
 		
-		float[] x_intsArray = savedInstanceState.getFloatArray("x_ints");
-		float[] y_intsArray = savedInstanceState.getFloatArray("y_ints");
-		float[] x_chosensArray = savedInstanceState.getFloatArray("x_chosens");
-		float[] y_chosensArray = savedInstanceState.getFloatArray("y_chosens");
-
-		for (int i = 0; i < x_intsArray.length; i++) {
-			x_ints.add(x_intsArray[i]);
-			y_ints.add(y_intsArray[i]);
-			x_chosens.add(x_chosensArray[i]);
-			y_chosens.add(y_chosensArray[i]);
+		try {
+			
+			//Read file
+			InputStream is = getResources().openRawResource(R.raw.current_activity);
+			//FileInputStream fis = openFileInput("current_activity");
+			StringBuffer fileContent = new StringBuffer();
+			byte[] buffer = new byte[1024];
+			while( (is.read(buffer)) != -1) {
+			  fileContent.append(new String(buffer));
+			}
+			JSONObject currentActivity;
+			currentActivity = (JSONObject)new JSONParser().parse(fileContent.toString());
+			
+			//Only answer one question at a time
+			if (bl_Id != (Integer)currentActivity.get("id")) {
+				AlertDialog.Builder builder = new AlertDialog.Builder(BudgetLineActivity.this);				
+				builder.setMessage("You must complete your last survey before answering this one");
+				builder.setNeutralButton("Back to Menu",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int id) {
+							startActivity( new Intent(getApplicationContext(), MainActivity.class) );
+						}
+					}
+				);
+				AlertDialog alert = builder.create();
+				alert.show();			
+			}
+			
+			//Reup Hash map
+	        Gson gson = new Gson();
+	        chosens = gson.fromJson((String) currentActivity.get("results"), ArrayList.class);
+			
+		} catch (Exception e) {
+			Log.d(TAG,"onResume Exception");
+			e.printStackTrace();
 		}
-		
-		if (bl_Id != savedInstanceState.getInt("id")) {
-			AlertDialog.Builder builder = new AlertDialog.Builder(BudgetLineActivity.this);				
-			builder.setMessage("You must complete your last survey before answering this one");
-			builder.setNeutralButton("Back to Menu",
-			new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialog, int id) {
-					startActivity( new Intent(getApplicationContext(), MainActivity.class) );
-				}
-			});
-			AlertDialog alert = builder.create();
-			alert.show();			
-		}
-		
+
 	}
 
 	@Override
 	public void onProgressChanged(SeekBar seekbar, int progress,
 			boolean fromUser) {
 		_progress = progress;
-		DrawView.setDotValue(progress);
+		DrawView.setDotValue((int) (_progress * x / exp.getX_max()));
 		layout.invalidate();
 		xValue.setText(getXLabel());
 		yValue.setText(getYLabel());
@@ -228,33 +239,41 @@ public class BudgetLineActivity extends Activity implements
 	@Override
 	public void onClick(View v) {
 		if (v.getId() == R.id.select_button) {
-			x_ints.add(x);
-			y_ints.add(y);
-			x_chosens.add(getX());
-			y_chosens.add(getY());
+			
+			ConcurrentHashMap<String,Object> chosen = new ConcurrentHashMap<String,Object>();
+			
+			chosen.put("x_int",x);
+			chosen.put("y_int",y);
+			chosen.put("x_chosen",getX());
+			chosen.put("y_chosen",getY());
+			chosen.put("winner",(probabilistic ? exp.getSession(exp.getCurrSession()).getLine(exp.getCurrLine()).getWinner() : '-'));
+			chosen.put("line_chosen_boolean",exp.getSession(exp.getCurrSession()).getLine_chosen() == exp.getCurrLine() );
+			
+			chosens.add(chosen);
+			
 			exp.nextLine();
 			if (exp.getCurrLine() == 0) {
 				int lineChosen = exp.getSession(exp.getCurrSession() - 1)
 						.getLine_chosen();
 				String message = "Thank you for completing a session.\n\n"
-						+ "The " + lineChosen + Utils.getOrdinalFor(lineChosen) + " ";
-				if (exp.getProbabilistic()) {
+						+ "The " + (lineChosen + 1) + Utils.getOrdinalFor(lineChosen + 1) + " ";
+				if (probabilistic) {
 					char winner = exp.getSession(exp.getCurrSession() - 1).getLine(
 							lineChosen).getWinner();
 					message = message
 							+ "line and "
 							+ winner
 							+ "-axis was chosen.\nYou have won "
-							+ ((winner == 'X') ? (formatter.format(getX())
+							+ ((winner == 'X') ? (formatter.format(chosens.get(lineChosen).get("x_chosen"))
 									+ " " + exp.getX_units() + " of " + exp
-									.getX_label()) : (formatter.format(getY())
+									.getX_label()) : (formatter.format(chosens.get(lineChosen).get("y_chosen"))
 									+ " " + exp.getY_units() + " of " + exp
 									.getY_label())) + ".";
 				} else {
 					message = message + "line was chosen.\nYou have won "
-							+ formatter.format(getX()) + " " + exp.getX_units()
+							+ formatter.format(chosens.get(lineChosen).get("x_chosen")) + " " + exp.getX_units()
 							+ " of " + exp.getX_label() + " and "
-							+ formatter.format(getY()) + " " + exp.getY_units()
+							+ formatter.format(chosens.get(lineChosen).get("y_chosen")) + " " + exp.getY_units()
 							+ " of " + exp.getY_label() + ".";
 				}
 				AlertDialog.Builder builder = new AlertDialog.Builder(BudgetLineActivity.this);				
@@ -342,7 +361,7 @@ public class BudgetLineActivity extends Activity implements
 									}
 									break;
 								case R.id.right_button:
-									if (_progress < x) {
+									if (_progress < 100) {
 										DrawView.addToX(1);
 										_progress += 1;
 										seekBar.setProgress(_progress);
@@ -356,7 +375,7 @@ public class BudgetLineActivity extends Activity implements
 						});
 
 						try {
-							Thread.sleep(40);
+							Thread.sleep(35);
 						} catch (InterruptedException e) {
 							throw new RuntimeException(
 									"Could not wait between adding 1 to x.", e);
@@ -398,7 +417,7 @@ public class BudgetLineActivity extends Activity implements
 			}
 			break;
 		case R.id.right_button:
-			if (_progress < x) {
+			if (_progress < 100) {
 				DrawView.addToX(1);
 				_progress += 1;
 				seekBar.setProgress(_progress);
@@ -426,8 +445,8 @@ public class BudgetLineActivity extends Activity implements
 			
 			status = 1;
 			
-			for (int i = 0; i < x_ints.size(); i++) {
-				new Thread( new UploadSingleBL(x_ints.get(i),y_ints.get(i),x_chosens.get(i),y_chosens.get(i)) ).start();
+			for (ConcurrentHashMap<String,Object> chosen : chosens) {
+				new Thread( new UploadSingleBL(((Float) chosen.get("x_int")),(Float)chosen.get("y_int"),(Float)chosen.get("x_chosen"),(Float)chosen.get("y_chosen"),(Character)chosen.get("winner"),(Boolean)chosen.get("line_chosen_boolean"))).start();
 			}
 			
 			return status;
@@ -482,15 +501,18 @@ public class BudgetLineActivity extends Activity implements
 		private float y_int;
 		private float x_chosen;
 		private float y_chosen;
+		private char winner;
+		private boolean line_chosen_boolean;		
 		
-		
-		public UploadSingleBL(float x_int, float y_int, float x_chosen, float y_chosen) {
+		public UploadSingleBL(float x_int, float y_int, float x_chosen, float y_chosen, char winner, boolean line_chosen_boolean) {
 			super();
 			Log.d(TAG,"In UploadSingleBL constructor");
 			this.x_int = x_int;
 			this.y_int = y_int;
 			this.x_chosen = x_chosen;
 			this.y_chosen = y_chosen;
+			this.winner = winner;
+			this.line_chosen_boolean = line_chosen_boolean;
 		}
 
 		@Override
@@ -501,14 +523,16 @@ public class BudgetLineActivity extends Activity implements
 						+ "?bl_id=" + bl_Id + "&bl_username=" + username
 						+ "&bl_lat=" + BackgroundService.getLastLat()
 						+ "&bl_lon=" + BackgroundService.getLastLon()
+						+ "&bl_x=" + x_chosen + "&bl_y=" + y_chosen
 						+ "&bl_x_intercept=" + x_int + "&bl_y_intercept=" + y_int
-						+ "&bl_x=" + x_chosen + "&bl_y=" + y_chosen);
+						+ "&bl_winner=" + winner + "&line_chosen_boolean=" + line_chosen_boolean);
 				response = Utils.getData(Configuration.XLAB_API_ENDPOINT_BL
 						+ "?bl_id=" + bl_Id + "&bl_username=" + username
 						+ "&bl_lat=" + BackgroundService.getLastLat()
 						+ "&bl_lon=" + BackgroundService.getLastLon()
+						+ "&bl_x=" + x_chosen + "&bl_y=" + y_chosen
 						+ "&bl_x_intercept=" + x_int + "&bl_y_intercept=" + y_int
-						+ "&bl_x=" + x_chosen + "&bl_y=" + y_chosen);
+						+ "&bl_winner=" + winner + "&bl_line_chosen_boolean=" + line_chosen_boolean);
 
 				if(null == response) {
 					//TODO: Check for response and retry if it failed
@@ -602,7 +626,7 @@ public class BudgetLineActivity extends Activity implements
 		yValue.setText(getYLabel());
 		layout.invalidate();
 	}
-	
+
 	private void writeToFile(String fileName, String str) throws IOException {
 
 		FileOutputStream fos = openFileOutput(fileName, Context.MODE_PRIVATE);
@@ -610,19 +634,19 @@ public class BudgetLineActivity extends Activity implements
 		fos.close();
 
 	}
-	
+
 	private String readFromFile(String fileName) throws IOException {
 		StringBuilder strContent = new StringBuilder("");
 		int ch;
 		FileInputStream fin = openFileInput(fileName);
-		
+
 		while ((ch = fin.read()) != -1) {
 			strContent.append((char)ch);
 		}
 		fin.close();
-		
+
 		return strContent.toString();		
-		
+
 	}
-	
+
 }

@@ -60,23 +60,23 @@ public class DrawView extends View {
         paint.setAntiAlias(true);
         
         //draw axes.
-        canvas.drawLine(25, 250, 25, 0, paint);
-        canvas.drawLine(25, 250, 275, 250, paint);
+        canvas.drawLine(30, 400, 30, 0, paint);
+        canvas.drawLine(30, 400, 430, 400, paint);
         
         //draw the graph labels.
-        paint.setTextSize(17);
+        paint.setTextSize(23);
         canvas.rotate(-90);
-        canvas.drawText(yLabel + ": " + formatter.format(BudgetLineActivity.getY()) + " " + yUnit, -200, 15, paint);
+        canvas.drawText(yLabel + ": " + formatter.format(BudgetLineActivity.getY()) + " " + yUnit, -300, 20, paint);
         canvas.rotate(90);
-        canvas.drawText( xLabel + ": " + formatter.format(BudgetLineActivity.getX()) + " " + xUnit, 80, 280, paint);
+        canvas.drawText( xLabel + ": " + formatter.format(BudgetLineActivity.getX()) + " " + xUnit, 140, 430, paint);
         
         //draw the budget line.
         paint.setColor(Color.RED);
-        canvas.drawLine(25, 250 - (int) Math.round(y), 25 + (int) Math.round(x), 250, paint);
+        canvas.drawLine(30, 400 - (int) Math.round(y), 30 + (int) Math.round(x), 400, paint);
         
         //draw the dot.
         paint.setColor(Color.BLACK);
-        canvas.drawCircle(dotX, dotY, 5, paint);
+        canvas.drawCircle(dotX, dotY, 7, paint);
     }
     
     public static void setLabels(String x, String y, String xCurrency, String yCurrency) {
@@ -90,8 +90,8 @@ public class DrawView extends View {
      * @param x1 the new x value of the dot
      */
     public static void setDotValue(int x1) {
-        dotX = x1 + 25;
-        dotY = (int) (slope * (x1) + 250 - y);
+        dotX = x1 + 30;
+        dotY = (int) (slope * (x1) + 400 - y);
     }
 
     /** Adds a value to the x coordinates and then
@@ -100,7 +100,7 @@ public class DrawView extends View {
      */
     public static void addToX(float add) {
         dotX += add;
-        dotY = (int) Math.round(slope * (dotX - 25) + 250 - y);
+        dotY = (int) Math.round(slope * (dotX - 30) + 400 - y);
     }
 
     /** assigns the slope and x & y intercepts from the Draw class so
@@ -115,4 +115,3 @@ public class DrawView extends View {
     }
 
 }
-

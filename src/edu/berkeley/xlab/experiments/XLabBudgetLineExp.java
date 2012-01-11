@@ -1,5 +1,8 @@
 package edu.berkeley.xlab.experiments;
 
+import org.json.JSONObject;
+import org.json.simple.JSONAware;
+
 import android.util.Log;
 import edu.berkeley.xlab.BudgetLineActivity;
 
@@ -88,9 +91,11 @@ public class XLabBudgetLineExp extends Experiment {
 			this.nextSession();
 		}
 	}
-	
+
+	//TODO: MAKE CONSTUCTOR FOR JSON STRING
+
 	public XLabBudgetLineExp(String exp) {
-			
+				
 		String[] ses = exp.split("session_parser,");
 	    Session[] sessions = new Session[ses.length - 1];
 		
