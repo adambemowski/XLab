@@ -3,10 +3,10 @@
     <string name="app_name">XLab</string>
     
     <!-- Menu items -->
-    <string name="menu_download">Download Experiments</string>
+    <string name="menu_refresh">Refresh Experiments</string>
     <string name="menu_turnoff">Turn GPS Off</string>
     <string name="menu_turnon">Turn GPS On</string>
     <string name="menu_debugBL">Debug BL</string>
-    <string name="menu_debugBQ">Debug BQ</string>
+    <string name="menu_debugTQ">Debug TQ</string>
     
 </resources>

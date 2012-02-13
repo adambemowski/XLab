@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import edu.berkeley.xlab.constants.Configuration;
-import edu.berkeley.xlab.experiments.*;
 import edu.berkeley.xlab.util.Utils;
+import edu.berkeley.xlab.xlab_objects.*;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -32,6 +32,10 @@ public class BackgroundService extends Service {
 	private NotificationManager notificationManager;	
 	
 	private static double lastLat = 0;
+	
+	private App appState;
+	private Context context;
+
 	
 	/**
 	 * @return last latitude read
@@ -78,6 +82,10 @@ public class BackgroundService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		
+		context = this.getApplicationContext();
+		appState = (App) context;
+
+		
 		Log.d(TAG, "In BackgroundService - OnCreate");
 		this.locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		this.notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -91,6 +99,7 @@ public class BackgroundService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		
 		super.onStartCommand(intent, flags, startId);
+		
 		
 		if (gpsListener == null) {
 			gpsListener = new GPSListener();
@@ -197,12 +206,14 @@ public class BackgroundService extends Service {
 
 		@Override
 		public void onProviderDisabled(String provider) {
+			Log.d(TAG,"In onProviderDisabled");
 			isRunning = false;
 			notifyOnLocationDisable();
 		}
 		
 		@Override
 		public void onProviderEnabled(String provider) {
+			Log.d(TAG,"In onProviderEnabled");
 			this.start();
 			isRunning = true;
 		}
@@ -274,7 +285,6 @@ public class BackgroundService extends Service {
 		Notification notification = new Notification(icon, tickerText, when);
 		notification.flags = Notification.FLAG_AUTO_CANCEL;
 		
-		Context context = getApplicationContext();
 		CharSequence contentTitle = "XLab Alert";
 		CharSequence contentText = "Please turn on GPS.";
 		Intent notificationIntent = new Intent(this, LoginActivity.class);
@@ -285,20 +295,19 @@ public class BackgroundService extends Service {
 	}
 	
 	//Copy sensor code here
-	private static final long MIN_TIME_BETWEEN_ALERTS = 15 * 60 * 1000;//TODO: Change to something reasonable
+	private static final long MIN_TIME_BETWEEN_ALERTS = 10 * 60 * 1000;//TODO: Change to something reasonable
 	private ConcurrentHashMap<Integer, Long> lastTime = new ConcurrentHashMap<Integer, Long>();
 
 	private void doXLabChecks(double lat, double lon, float accuracy) {
 
-		App appState = ((App)getApplicationContext());
 		Log.d(TAG,"In doXLabChecks");
 		for(Map.Entry<Integer, Experiment> entry : appState.getXLabExps().entrySet()) {
 			Experiment exp = entry.getValue();
 
-			Log.d(TAG,"Examining " + exp.getTitle() + ": isAnswered = " + exp.isDone() + ": radius = " + exp.getRadius() + ", accuracy = " + accuracy + ", distance = " + Utils.GetDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon));
+			Log.d(TAG,"Examining " + exp.getTitle() + ": isAnswered = " + exp.isDone() + ": radius = " + exp.getRadius() + ", accuracy = " + accuracy + ", distance = " + Utils.getDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon));
 			//Consider this fix only if the accuracy is at least 100% of the radius specified in the geofence
 			if(! exp.isDone() &&  (exp.getRadius() * 1.0f) >= accuracy && 
-					Utils.GetDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon) <= exp.getRadius()) {
+					Utils.getDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon) <= exp.getRadius()) {
 				Log.d(TAG,"Starting thread for " + exp.getTitle());
 				//Show a notification
 				Thread t = new Thread( new UploadXLabTask(exp) );
@@ -328,13 +337,13 @@ public class BackgroundService extends Service {
 		public void run() {
 			
 			try{
-				lastTime.putIfAbsent(exp.getId(), (long)0);
+				lastTime.putIfAbsent(exp.getExpId(), (long)0);
 				Log.d(TAG,"a" + new Long(System.currentTimeMillis()).toString());
-				Log.d(TAG,"b" + new Long(lastTime.get(exp.getId())).toString());
+				Log.d(TAG,"b" + new Long(lastTime.get(exp.getExpId())).toString());
 				Log.d(TAG,"c" + new Long(MIN_TIME_BETWEEN_ALERTS).toString());
-				if (System.currentTimeMillis() - lastTime.get(exp.getId()) > MIN_TIME_BETWEEN_ALERTS) {
+				if (System.currentTimeMillis() - lastTime.get(exp.getExpId()) > MIN_TIME_BETWEEN_ALERTS) {
 					
-					lastTime.put(exp.getId(), System.currentTimeMillis());
+					lastTime.put(exp.getExpId(), System.currentTimeMillis());
 					int icon = R.drawable.ic_stat_x_notification;
 					CharSequence tickerText = "X-Lab Alert";
 					long when = System.currentTimeMillis();
@@ -350,18 +359,19 @@ public class BackgroundService extends Service {
 					CharSequence contentTitle = "X-Lab Alert";
 					CharSequence contentText = this.exp.getTitle();
 					Intent notificationIntent = new Intent(getApplicationContext(), exp.getActivity());
+					notificationIntent.putExtra("expId", exp.getExpId());
 					PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 		
 					notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
 					Log.d(TAG,"UploadXlabBL notify for " + this.exp.getTitle());
-					notificationManager.cancel(exp.getId());
-					notificationManager.notify(exp.getId(), notification);
-					//TODO: Figure out how to increment sessions
-					//this.xlabBL.nextCurrSession();
+					notificationManager.cancel(exp.getExpId());
+					notificationManager.notify(exp.getExpId(), notification);
 
 				}
 			}
-			catch(Exception e){}
+			catch(Exception e){
+				Log.e(TAG,e.toString());
+			}
 		}
 	}
 }

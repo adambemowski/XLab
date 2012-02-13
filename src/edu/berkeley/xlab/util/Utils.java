@@ -1,9 +1,10 @@
 package edu.berkeley.xlab.util;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -23,14 +24,18 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 public class Utils {
 	
-	public static final String UTIL_TAG = "ModeChoice-UTIL";
+	public static final String TAG = "ModeChoice-UTIL";
 	
 	public static void setStringPreference(Context context, String prefKey, String prefValue) {
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
@@ -118,15 +123,14 @@ public class Utils {
 	    return responseBody;
 	}
 	
-	//TODO: Set timeout: http://stackoverflow.com/questions/693997/how-to-set-httpresponse-timeout-for-android-in-java
 	public static String getData(String endpoint) 
-		throws ClientProtocolException, IOException {
+		throws ClientProtocolException, IOException, NumberFormatException {
 		
 		String responseBody = null;
 	    HttpClient httpclient = new DefaultHttpClient();
 	    HttpGet httpget = new HttpGet(endpoint);    
 	
-	    // Execute HTTP Post Request
+	    // Execute HTTP Get Request
 	    HttpResponse response = httpclient.execute(httpget);
 	    responseBody = EntityUtils.toString(response.getEntity());	    
 	    
@@ -151,7 +155,7 @@ public class Utils {
 		return a;
 	}
 	
-    public static double GetDistanceFromLatLon(double lat1, double lon1, double lat2, double lon2) {
+    public static double getDistanceFromLatLon(double lat1, double lon1, double lat2, double lon2) {
 
         int R = 6371; // km
         double dLat = Math.toRadians(lat2 - lat1);
@@ -181,4 +185,23 @@ public class Utils {
     	   return "th";
     	 }
     	}
+    
+	/**
+	 * Loads JSONObject
+	 * @throws JSONException 
+	 */
+	public static JSONObject getJSONFromFile(FileInputStream fis) throws JSONException {
+		try {
+	        InputStreamReader isr = new InputStreamReader(fis);
+	        BufferedReader br = new BufferedReader(isr);
+	        return (JSONObject) new JSONTokener(br.readLine()).nextValue();
+	        
+		} catch (Exception e) {
+			Log.d(TAG,"getJSONObject Exception: " + Log.getStackTraceString(e), e);
+			JSONObject blank = new JSONObject();
+			blank.put("valid", 0);
+			return blank;
+		}
+	}
+
 }

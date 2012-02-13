@@ -66,9 +66,9 @@ public class DrawView extends View {
         //draw the graph labels.
         paint.setTextSize(23);
         canvas.rotate(-90);
-        canvas.drawText(yLabel + ": " + formatter.format(BudgetLineActivity.getY()) + " " + yUnit, -300, 20, paint);
+        canvas.drawText(yLabel + ": " + formatter.format(ExpActivityBudgetLine.getY()) + " " + yUnit, -300, 20, paint);
         canvas.rotate(90);
-        canvas.drawText( xLabel + ": " + formatter.format(BudgetLineActivity.getX()) + " " + xUnit, 140, 430, paint);
+        canvas.drawText( xLabel + ": " + formatter.format(ExpActivityBudgetLine.getX()) + " " + xUnit, 140, 430, paint);
         
         //draw the budget line.
         paint.setColor(Color.RED);
@@ -98,7 +98,7 @@ public class DrawView extends View {
      * changes the y coordinate accordingly.
      * @param add amount being added to the x value of the dot.
      */
-    public static void addToX(float add) {
+    public static void addToX(double add) {
         dotX += add;
         dotY = (int) Math.round(slope * (dotX - 30) + 400 - y);
     }
