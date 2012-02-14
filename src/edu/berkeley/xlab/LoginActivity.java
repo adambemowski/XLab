@@ -182,7 +182,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 			builder.setNeutralButton("OK",
 			new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int id) {
-					if (message == "You have successfully logged in") {
+					if (message.equals("You have successfully logged in")) {
 						activity.startActivity(new Intent(context, MainActivity.class));
 					}
 				}
