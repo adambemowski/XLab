@@ -20,7 +20,7 @@ import android.util.Log;
 public abstract class ExpActivitySuperclass extends Activity {
 
 	//TODO: Put instruction in Menu
-	
+	 	
 	/** TAG is an identifier for the log. */
 	public static final String TAG = "XLab - ExpActivitySuperclass";
 	

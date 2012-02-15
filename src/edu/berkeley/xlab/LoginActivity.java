@@ -27,8 +27,6 @@ import edu.berkeley.xlab.util.Utils;
 
 public class LoginActivity extends Activity implements OnClickListener {
 	
-	//TODO: 
-	
 	private EditText etUsername;
 	private EditText etPassword;
 	private Button btnLogin;
