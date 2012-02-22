@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -77,6 +78,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 	
 	private boolean holdThreadRunning = false;
 	private boolean cancelHoldThread = false;
+	private Handler handler = new Handler();
 	
 	/** Called when the activity is first created. */
 	@Override
@@ -131,6 +133,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 		Log.d(TAG,"exp.getProgress() = " + exp.getProgress());
 		if (exp.getProgress() != -1) {
 			changeProgress(exp.getProgress());
+			seekBar.setProgress(exp.getProgress());
 		}
 
 	}
@@ -156,7 +159,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 	/** Changes sets dot based on progress given */
 	public void changeProgress(int progressInput) {
 		progress = progressInput;
-		DrawView.setDotValue((int) (progress * x / exp.getX_max()));
+		DrawView.setDotValue((int) (progress * x / exp.getX_max() * 4));
 		layout.invalidate();
 		xValue.setText(getXLabel());
 		yValue.setText(getYLabel());		
@@ -293,60 +296,58 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 	 *            A view object that knows what button has been pushed.
 	 */
 	private void startHoldThread(final View v) {
-		Thread r = new Thread() {
+	    Thread r = new Thread() {
 
-			@Override
-			public void run() {
-				try {
-					holdThreadRunning = true;
-					Thread.sleep(300);
-					while (!cancelHoldThread) {
-
-						new Handler().post(new Runnable() {
-							@Override
-							public void run() {
-								switch (v.getId()) {
-								case R.id.left_button:
-									if (progress > 0) {
-										DrawView.addToX(-1);
-										progress -= 1;
-										seekBar.setProgress(progress);
-										xValue.setText(getXLabel());
-										yValue.setText(getYLabel());
-									}
-									break;
-								case R.id.right_button:
-									if (progress < 100) {
-										DrawView.addToX(1);
-										progress += 1;
-										seekBar.setProgress(progress);
-										xValue.setText(getXLabel());
-										yValue.setText(getYLabel());
-									}
-									break;
-								}
-								layout.invalidate();
-							}
-						});
-
-						try {
-							Thread.sleep(35);
-						} catch (InterruptedException e) {
-							throw new RuntimeException(
-									"Could not wait between adding 1 to x.", e);
-						}
-					}
-				} catch (InterruptedException e) {
-					throw new RuntimeException(
-							"Could not initially wait for button hold");
-				} finally {
-					holdThreadRunning = false;
-					cancelHoldThread = false;
-				}
-			}
-		};
-		// actually start the thread, after defining it
-		r.start();
+	        @Override
+	        public void run() {
+	            try {
+	                holdThreadRunning = true;
+	                Thread.sleep(300);
+	                while (!cancelHoldThread) {
+	                    handler.post(new Runnable() {
+	                        @Override
+	                        public void run() {
+	                            switch (v.getId()) {
+	                            case R.id.left_button:
+	                                if (progress > 0) {
+	                                    DrawView.addToX(-1);
+	                                    progress -= 1;
+	                                    seekBar.setProgress(progress);
+	                                    xValue.setText(getXLabel());
+	                                    yValue.setText(getYLabel());
+	                                }
+	                                break;
+	                            case R.id.right_button:
+	                                if (progress < 100) {
+	                                    DrawView.addToX(1);
+	                                    progress += 1;
+	                                    seekBar.setProgress(progress);
+	                                    xValue.setText(getXLabel());
+	                                    yValue.setText(getYLabel());
+	                                }
+	                                break;
+	                            }
+	                            layout.invalidate();
+	                        }
+	                    });
+	                    try {
+	                        Thread.sleep(35);
+	                    } catch (InterruptedException e) {
+	                        throw new RuntimeException(
+	                                        "Could not wait between adding 1 to x.", e);
+	                    }
+	                }
+	            } catch (InterruptedException e) {
+	                throw new RuntimeException(
+	                                "Could not initially wait for button hold");
+	            } finally {
+	                holdThreadRunning = false;
+	                cancelHoldThread = false;
+	            }
+	        }
+	    };
+	    // actually start the thread, after defining it
+	    r.start();
 	}
 
 	/**
@@ -444,15 +445,17 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 				.getX_int();
 		y = (float) exp.getSession(currentSession).getLine(currentLine)
 				.getY_int();
-		intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max());
-		intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max());
+		intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max() * 4);
+		intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);
 		slope = intercepts[1] / intercepts[0];
-		progress = (int) Math.round(intercepts[0] / 2);
-		seekBar.setProgress(progress);
+		System.out.println("x intercept: " + intercepts[0]);
+		seekBar.setProgress(50);
+		progress = 50;
 		DrawView.loadLineValues(intercepts[0], intercepts[1]);
-		DrawView.setDotValue(progress);
+		DrawView.setDotValue((int) Math.round(intercepts[0] / 2));
 		xValue.setText(getXLabel());
 		yValue.setText(getYLabel());
+		System.out.println("progress: " + progress);
 		layout.invalidate();
 	}
 	
