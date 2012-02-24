@@ -41,7 +41,7 @@ public class DrawView extends View {
     /** y value of moving dot. */
     private static int dotY;
     
-    private DecimalFormat formatter = new DecimalFormat("#.##");
+    private DecimalFormat formatter = new DecimalFormat("###,###,##0.00");
     
     private static String xLabel;
     

@@ -94,6 +94,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 				params.put("location_services","none");
 				params.put("timezone", tz.getID());
 				params.put("key", md5(Configuration.SECRET_KEY + username));
+				params.put("change_phone", "1");
 				Log.d(LOGIN_ACTIVITY_TAG, "Hashkey is " + md5(Configuration.SECRET_KEY + username));
 			}
 			

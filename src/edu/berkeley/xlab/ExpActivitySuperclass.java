@@ -25,7 +25,7 @@ public abstract class ExpActivitySuperclass extends Activity {
 	public static final String TAG = "XLab - ExpActivitySuperclass";
 	
 	/** decimal FORMATTER */
-	public static final DecimalFormat FORMATTER = new DecimalFormat("###,###,###.00");
+	public static final DecimalFormat FORMATTER = new DecimalFormat("###,###,##0.00");
 
 	/** application context for Shared Preferences */
 	protected Context context;

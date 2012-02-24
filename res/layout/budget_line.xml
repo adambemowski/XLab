@@ -25,21 +25,17 @@
 		android:layout_width="wrap_content" 
 		android:layout_gravity="center"
 		android:stretchColumns="*"
+		android:layout_marginLeft="5dp"
+		android:layout_marginRight="5dp"
 		android:layout_marginTop="10dp">
 		 
-	<TableRow>
-		<TextView
-		android:id="@+id/x_value"
-        android:layout_width="fill_parent" 
-        android:layout_height="wrap_content" 
-        android:text="X = default"
-        android:layout_weight="1" />
-        <TextView
-        android:id="@+id/y_value"  
-        android:layout_width="fill_parent" 
-        android:layout_height="wrap_content" 
-        android:text="Y = default"
-        android:layout_weight="1" />
+		<TableRow>
+			<TextView
+			android:id="@+id/explanation"
+	        android:layout_width="fill_parent" 
+	        android:layout_height="wrap_content" 
+	        android:text="Please wait for explanation to load."
+	        android:layout_weight="1" />
     	</TableRow>
     </TableLayout>
     <TableLayout 
