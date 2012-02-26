@@ -8,7 +8,10 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.util.Log;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 
 /**
@@ -18,8 +21,6 @@ import android.util.Log;
  * @author Daniel Vizzini
  */
 public abstract class ExpActivitySuperclass extends Activity {
-
-	//TODO: Put instruction in Menu
 	
 	/** TAG is an identifier for the log. */
 	public static final String TAG = "XLab - ExpActivitySuperclass";
@@ -90,4 +91,22 @@ public abstract class ExpActivitySuperclass extends Activity {
 		
 	}
 	
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.superclassmenu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.instructions) {
+        Intent i = new Intent("edu.berkeley.xlab.INSTRUCTIONS");
+        startActivity(i);
+        }
+        return false;
+    }
+    
+    
 }
