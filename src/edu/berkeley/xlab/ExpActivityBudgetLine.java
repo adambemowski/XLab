@@ -1,6 +1,9 @@
 package edu.berkeley.xlab;
 
+import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -9,6 +12,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.format.Time;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -238,13 +242,74 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 										+ " of " + exp.getY_label() + ".";
 								
 							}
-							
+
 							cleanUpExp(exp, message);
-							
-						} else {
-							displayNewLine();
+
+						} else { 
+						    switch (exp.getTimerStatusLine()) {
+						    case 0:  
+						        displayNewLine();
+						        break;
+						    case 1:
+						        Time nextTime = exp.nextTime(System.currentTimeMillis());
+						        String displayMessage = "You will recieve a notification to pick another point at " + nextTime.hour + ":" + nextTime.minute + ".";
+						        AlertDialog.Builder timeBuilder = new AlertDialog.Builder(ExpActivityBudgetLine.this);
+						        timeBuilder.setMessage(displayMessage);
+
+						        timeBuilder.setNegativeButton("Cancel", null);
+
+						        timeBuilder.setPositiveButton("Confirm",
+						                        new DialogInterface.OnClickListener() {
+						            public void onClick(DialogInterface dialog, int which) {finish();}});
+						        AlertDialog timeAlert = timeBuilder.create();
+						        timeAlert.show();
+
+						        /*int icon = R.drawable.ic_stat_x_notification;
+						        CharSequence tickerText = "X-Lab Alert";
+						        long when = System.currentTimeMillis();
+
+						        Log.d(TAG,"Running UploadXlab");
+						        Notification notification = new Notification(icon, tickerText, when);
+						        notification.flags = Notification.FLAG_AUTO_CANCEL;
+						        notification.defaults |= Notification.DEFAULT_SOUND;
+						        notification.defaults |= Notification.DEFAULT_VIBRATE;
+						        notification.defaults |= Notification.DEFAULT_LIGHTS;
+
+						        CharSequence contentTitle = "X-Lab Alert";
+						        CharSequence contentText = exp.getTitle();
+						        Intent notificationIntent = new Intent(context, exp.getActivity());
+						        notificationIntent.putExtra("expId", exp.getExpId());
+						        PendingIntent contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+						        notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
+
+						        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+						        Intent alarm = new Intent(ExpActivityBudgetLine.this, AlarmReciever.class);
+						        alarm.putExtra("notification", notification);
+						        alarm.putExtra("expId", exp.getExpId());
+						        PendingIntent pendingIntent = PendingIntent.getBroadcast(ExpActivityBudgetLine.this, 0,
+						                        alarm, PendingIntent.FLAG_ONE_SHOT);
+						        am.set(AlarmManager.RTC_WAKEUP,nextTime.toMillis(false)
+						                        , pendingIntent);*/
+						        
+						        break;
+						    case 2:
+						        Time nextTime2 = exp.nextTime(System.currentTimeMillis());
+                                String displayMessage2 = "You will recieve a notification to pick another point at " + nextTime2.hour + ":" + nextTime2.minute + ".";
+                                AlertDialog.Builder timeBuilder2 = new AlertDialog.Builder(ExpActivityBudgetLine.this);
+                                timeBuilder2.setMessage(displayMessage2);
+
+                                timeBuilder2.setNegativeButton("Cancel", null);
+
+                                timeBuilder2.setPositiveButton("Confirm",
+                                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {finish();}});
+                                AlertDialog timeAlert2 = timeBuilder2.create();
+                                timeAlert2.show();
+						        break;
+						    }
+
 						}
-					
+
 					}
 				}
 			);

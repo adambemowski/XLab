@@ -1,5 +1,12 @@
 package edu.berkeley.xlab.xlab_objects;
 
+import java.util.Random;
+
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.text.format.Time;
+
 public abstract class Experiment extends XLabSuperObject {
 	
 	/** Filename of list of SharedPreferences of responses given*/
@@ -15,6 +22,12 @@ public abstract class Experiment extends XLabSuperObject {
 	protected Class<?> activity; public Class<?> getActivity() {return activity;}
 	protected String title; public String getTitle() {return title;}
 	protected boolean done; public boolean isDone() {return this.done;}
+	protected int timerStatusLine = 1; public int getTimerStatusLine() {
+	    return timerStatusLine;}
+	protected int intervalMaxLine = 300; public int getIntervaleMaxLine() {
+	    return intervalMaxLine;}
+	protected int intervalMinLine = 120; public int getIntervalMinLine() {
+	    return intervalMinLine;}
 	
 	//** sets done to true */
 	public void makeDone() {
@@ -33,5 +46,15 @@ public abstract class Experiment extends XLabSuperObject {
 	 */
 	public static String makeSPName(int expId) {
 		return (EXP_PREFIX + expId);
+	}
+	
+	public Time nextTime(long currentTime) {
+	    int timeWindow = (intervalMaxLine - intervalMinLine) * 1000;
+	    Random r = new Random();
+	    int time = r.nextInt(timeWindow);
+	    long nextTime = time + currentTime + intervalMinLine * 1000;
+	    Time timeObj = new Time();
+	    timeObj.set(nextTime);
+	    return timeObj;	    
 	}
 }
