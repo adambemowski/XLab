@@ -1,6 +1,6 @@
 package edu.berkeley.xlab.xlab_objects;
 
-import edu.berkeley.xlab.constants.Configuration;
+import edu.berkeley.xlab.constants.Constants;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -23,7 +23,7 @@ public class ResponseTQ extends Response {
 		
 		Log.d(TAG,"In Chosen explicit constructor");
 		
-		this.typeId = Configuration.XLAB_TQ_EXP;
+		this.typeId = Constants.XLAB_TQ_EXP;
 		this.expId = expId;
 		this.answer = answer;
 		
@@ -38,7 +38,7 @@ public class ResponseTQ extends Response {
 		
 		Log.d(TAG,"In Chosen SharedPreferences constructor");
 		
-		this.typeId = Configuration.XLAB_TQ_EXP;
+		this.typeId = Constants.XLAB_TQ_EXP;
 		this.expId = sharedPreferences.getInt("expId",-1);
 		this.answer = sharedPreferences.getString("answer","");
 		

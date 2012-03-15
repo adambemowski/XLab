@@ -9,7 +9,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,7 @@ import org.json.JSONTokener;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.text.format.Time;
 import android.util.Log;
 
 public class Utils {
@@ -171,18 +174,18 @@ public class Utils {
     	 int hundredRemainder = value % 100;
     	 int tenRemainder = value % 10;
     	 if(hundredRemainder - tenRemainder == 10) {
-    	  return "th";
+    	  return value + "th";
     	 }
     	 
     	 switch (tenRemainder) {
     	  case 1:
-    	   return "st";
+    	   return value + "st";
     	  case 2:
-    	   return "nd";
+    	   return value + "nd";
     	  case 3:
-    	   return "rd";
+    	   return value + "rd";
     	  default:
-    	   return "th";
+    	   return value + "th";
     	 }
     	}
     
@@ -203,5 +206,148 @@ public class Utils {
 			return blank;
 		}
 	}
+	
+	/**
+	 * Calculates the number of eligible days between two dates.
+	 * @param startDate day from which to begin calculating
+	 * @param endDate day from which to end calculating
+	 * @param dayEligibility boolean array of length 7, with each day corresponding to a day of the week, where true indicates the day is eligible. Index 0 is Sunday.
+	 * @return the number of eligible days between startDate and endDate, inclusively. Note that is startDate equals endDate, 1 will be returned
+	 */
+	public static int getEligiableDaysBetweenTwoDates(GregorianCalendar startDate, GregorianCalendar endDate, boolean[] dayEligibility) {
+		
+		checkDayEligibility(dayEligibility);
+		
+		//put earlier day first			    
+	    if (startDate.getTimeInMillis() > endDate.getTimeInMillis()) {
+	        GregorianCalendar tempDate = (GregorianCalendar) startDate.clone();
+	    	startDate = (GregorianCalendar) endDate.clone();
+	        endDate = (GregorianCalendar) tempDate.clone();
+	    }
+
+	    int eligiableDays = 0;
+	    int dayOfWeek = startDate.get(Calendar.DAY_OF_WEEK) - 1;
+	    int[] firstDate = {startDate.get(Calendar.YEAR),startDate.get(Calendar.MONTH), startDate.get(Calendar.DATE)};
+	    GregorianCalendar dateBetween;
+	    
+	    for (int i = 0; i < 7; i ++) {
+	    	dateBetween = new GregorianCalendar(firstDate[0], firstDate[1], firstDate[2] + i);
+
+	    	Log.d(TAG,"dayEligibility: " + dayEligibility[0] + dayEligibility[1] + dayEligibility[2] + dayEligibility[3] + dayEligibility[4] + dayEligibility[5] + dayEligibility[6]);
+	    	Log.d(TAG,"dayOfWeek: " + dayOfWeek);
+	    	
+	    	if (dayEligibility[dayOfWeek]) {
+	    		while (dateBetween.getTimeInMillis() <= endDate.getTimeInMillis()) {
+		            eligiableDays++;
+		            dateBetween.add(Calendar.DAY_OF_MONTH, 7);
+			    }
+	    	}
+	    	dayOfWeek = (dayOfWeek + 1) % 7;
+	    }
+
+	    return eligiableDays;
+	}
+	
+	/**
+	 * Calculates the day given number of days after a starting date, skipping ineligible days
+	 * @param startDate day from which to begin calculating
+	 * @param numDays eligible days after startDate that the function will return. Note that 0 will return 0 if this date is eligible and the first eligible date after startDate otherwise
+	 * @param dayEligibility boolean array of length 7, with each day corresponding to a day of the week, where true indicates the day is eligible. Index 0 is Sunday.
+	 * @return the date numDays eligible days after start date
+	 */
+	public static GregorianCalendar addEligibleDays(GregorianCalendar startDate, int numDays, boolean[] dayEligibility){
+		
+		checkDayEligibility(dayEligibility);
+		
+		GregorianCalendar date = (GregorianCalendar) startDate.clone();
+		
+		if (numDays < 0) {
+			throw new IllegalArgumentException("numDays must be positive");
+		}
+		
+	    int dayOfWeek = date.get(Calendar.DAY_OF_WEEK) - 1;
+	    
+	    while (numDays >= 0) {
+	        Log.d(TAG,"date Now: " + date.get(Calendar.YEAR) + "/" + (date.get(Calendar.MONTH) + 1) + "/" + date.get(Calendar.DATE) );
+	    	if (dayEligibility[dayOfWeek]) {
+	    		--numDays;
+	    		Log.d(TAG,"numDays: "+ numDays);
+	    		if (numDays < 0) {
+	    			Log.d(TAG,"Breaking");
+			    	break;	    			
+	    		}
+	    	} 
+	    	date.add(Calendar.DATE,1);	    		
+	    	dayOfWeek = (dayOfWeek + 1) % 7;
+	    }
+	    
+	    return date;
+	    
+	}
+	
+	/** ensures that dayEligibility argument is of write length and has a true element */
+	private static void checkDayEligibility(boolean[] dayEligibility) {
+		if (dayEligibility.length != 7) {
+			throw new IllegalArgumentException("dayEligibility must be of length 7, with index 0 corresponding to Sunday");
+		}
+		
+		boolean atLeastOneDayIsEligible = false;
+		for (boolean day : dayEligibility) {
+			atLeastOneDayIsEligible |= day;
+		}
+		if (!atLeastOneDayIsEligible) {
+			throw new IllegalArgumentException("At least one day must be eligible");
+		}
+	}
+	
+	/**
+	 * Checks list to see if XLABSuperObject has been saved
+	 * @param context Application context
+	 * @param name name of SharedPreferences associated with XLABSuperObject specified
+	 * @param list name of list of SharedPreferences, e.g. Experiment.EXP_LIST
+	 * @return true if list contains this name, false otherwise
+	 */
+	public static boolean checkIfSaved(Context context, String name, String list) {
+		
+		String[] names = context.getSharedPreferences(list, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
+		ArrayList<String> namesArrayList = new ArrayList<String>();
+		
+		if (!names[0].equals("")) {
+			for (String expName : names) {
+				if (!namesArrayList.contains(expName)) {
+					namesArrayList.add(expName);
+				}
+			}
+		}		
+		
+		return namesArrayList.contains(name);
+		
+	}
+	
+	/**
+	 * @return string of time of next experiment segment in readable manner, e.g. 3:50 pm today, 3:50 pm tomorrow, 3:50 pm on Thursday, March 3
+	 */
+	public static String getRelativeTime(long timeInFuture) {
+    	
+        Long currentTime = System.currentTimeMillis();
+        Time nextTimeObj = new Time();
+	    nextTimeObj.set(timeInFuture);
+	    
+        //figure out relative day of next alert
+        String relativeDay;
+        Calendar rightNow = Calendar.getInstance();
+        int dateDiff = (Time.getJulianDay(timeInFuture, (rightNow.get(Calendar.ZONE_OFFSET) + rightNow.get(Calendar.DST_OFFSET)) / 1000) - Time.getJulianDay(currentTime, (rightNow.get(Calendar.ZONE_OFFSET) + rightNow.get(Calendar.DST_OFFSET)) / 1000));
+        if (dateDiff == 0) {
+        	relativeDay = " today";
+        } else if (dateDiff == 1) {
+        	relativeDay = " tomorrow";
+        } else {
+        	relativeDay = " on " + nextTimeObj.format("%A") + ", " + nextTimeObj.format("%B") + " " + Utils.getOrdinalFor(Integer.valueOf(nextTimeObj.format("%d"))) + ", " + nextTimeObj.format("%Y");
+        }
+        
+        return nextTimeObj.format("%r") + relativeDay;
+
+	}
+	
 
 }

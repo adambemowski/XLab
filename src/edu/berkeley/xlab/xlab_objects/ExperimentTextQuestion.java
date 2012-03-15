@@ -1,10 +1,13 @@
 package edu.berkeley.xlab.xlab_objects;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import edu.berkeley.xlab.ExpActivityTextQuestion;
-import edu.berkeley.xlab.constants.Configuration;
+import edu.berkeley.xlab.constants.Constants;
 
 public class ExperimentTextQuestion extends Experiment {
 	
@@ -27,6 +30,41 @@ public class ExperimentTextQuestion extends Experiment {
 		this.title = String.valueOf(parts[5]);
 		this.answer = "";
 
+		this.save(context);
+
+	}
+	
+	public ExperimentTextQuestion(Context context, JSONObject json) {
+		
+		Log.d(TAG,"In XLabTextQuestion JSON constructor");
+		Log.d(TAG,"Text question info: " + json.toString());
+		try {
+			Log.d(TAG,"json.getInt(\"id\"): " + json.getInt("id"));
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		this.identify();
+		
+		JSONObject info;
+		JSONObject geofense;
+		try {
+			info = json.getJSONObject("text_question_info");
+			geofense = json.getJSONObject("geofence");
+
+			this.expId = json.getInt("id");
+			this.done = false;
+			this.title = info.getString("question");
+			this.location = geofense.getString("title");
+			this.lat = (float) geofense.getDouble("lat");
+			this.lon = (float) geofense.getDouble("lon");
+			this.radius = geofense.getInt("radius");
+			this.answer = "";
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
+		this.save(context);
+		
 	}
 	
 	public ExperimentTextQuestion(Context context, SharedPreferences sharedPreferences) {
@@ -34,6 +72,7 @@ public class ExperimentTextQuestion extends Experiment {
 		Log.d(TAG,"In XLabTextQuestion SharedPreferences constructor");
 		
 		this.identify();
+		this.done = sharedPreferences.getBoolean("done", false);
 		this.expId = sharedPreferences.getInt("expId",-1);
 		this.title = sharedPreferences.getString("title","");
 		this.location = sharedPreferences.getString("location","");
@@ -45,7 +84,7 @@ public class ExperimentTextQuestion extends Experiment {
 	}
 	
 	@Override
-	public void save(Context context) {//would prefer protected, limitation of Interface
+	protected void save(Context context) {
 		
 		Log.d(TAG, "Saving " + title);
 		
@@ -54,6 +93,7 @@ public class ExperimentTextQuestion extends Experiment {
 		
 		editor.putInt("typeId", typeId);
 		editor.putInt("expId", expId);
+		editor.putBoolean("done", done);
 		editor.putString("title", title);
 		editor.putString("location", location);
 		editor.putFloat("lat", lat);
@@ -76,10 +116,10 @@ public class ExperimentTextQuestion extends Experiment {
 		editor.commit();
 
 	}
-	
+		
 	/** method of instantiations common to all constructors */
 	private void identify() {
-		this.typeId = Configuration.XLAB_TQ_EXP;
+		this.typeId = Constants.XLAB_TQ_EXP;
 		this.activity = ExpActivityTextQuestion.class;		
 	}
 
