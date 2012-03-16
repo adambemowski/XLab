@@ -22,12 +22,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import edu.berkeley.xlab.constants.Configuration;
+import edu.berkeley.xlab.constants.Constants;
 import edu.berkeley.xlab.util.Utils;
 
 public class LoginActivity extends Activity implements OnClickListener {
-	
-	//TODO: 
 	
 	private EditText etUsername;
 	private EditText etPassword;
@@ -49,8 +47,8 @@ public class LoginActivity extends Activity implements OnClickListener {
 		activity = LoginActivity.this;
 		context = getApplicationContext();
 		
-		if(Utils.getBooleanPreference(activity, Configuration.IS_LOGGED_IN, false) || 
-				Configuration.IS_DEV_MODE) {
+		if(Utils.getBooleanPreference(activity, Constants.IS_LOGGED_IN, false) || 
+				Constants.IS_DEV_MODE) {
 			Log.d(LOGIN_ACTIVITY_TAG, "User is logged in - redirect to main screen");
         	Intent intent = new Intent(context, MainActivity.class);
         	startActivity(intent);
@@ -95,8 +93,9 @@ public class LoginActivity extends Activity implements OnClickListener {
 				params.put("identifier", tm.getDeviceId());
 				params.put("location_services","none");
 				params.put("timezone", tz.getID());
-				params.put("key", md5(Configuration.SECRET_KEY + username));
-				Log.d(LOGIN_ACTIVITY_TAG, "Hashkey is " + md5(Configuration.SECRET_KEY + username));
+				params.put("key", md5(Constants.SECRET_KEY + username));
+				params.put("change_phone", "1");
+				Log.d(LOGIN_ACTIVITY_TAG, "Hashkey is " + md5(Constants.SECRET_KEY + username));
 			}
 			
 			new Login().execute();
@@ -138,7 +137,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 		@Override
 		protected Void doInBackground(Void... whatever) {
 			try {
-				String response = Utils.postData(Configuration.AUTH_API_ENDPOINT, params);
+				String response = Utils.postData(Constants.AUTH_API_ENDPOINT, params);
 				Log.d(LOGIN_ACTIVITY_TAG, response);
 				if(null != response) {
 					//Parse the JSON response
@@ -147,8 +146,8 @@ public class LoginActivity extends Activity implements OnClickListener {
 					
 					if(responseCode == 1) {
 						//Save the username in shared preferences
-						Utils.setStringPreference(context, Configuration.USERNAME, username);
-						Utils.setBooleanPreference(context, Configuration.IS_LOGGED_IN, true);
+						Utils.setStringPreference(context, Constants.USERNAME, username);
+						Utils.setBooleanPreference(context, Constants.IS_LOGGED_IN, true);
 						
 						message = "You have successfully logged in";
 						

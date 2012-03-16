@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import edu.berkeley.xlab.constants.Configuration;
+import edu.berkeley.xlab.constants.Constants;
 import edu.berkeley.xlab.util.Utils;
 import edu.berkeley.xlab.xlab_objects.*;
 
@@ -15,6 +15,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -33,7 +34,6 @@ public class BackgroundService extends Service {
 	
 	private static double lastLat = 0;
 	
-	private App appState;
 	private Context context;
 
 	
@@ -83,14 +83,13 @@ public class BackgroundService extends Service {
 		super.onCreate();
 		
 		context = this.getApplicationContext();
-		appState = (App) context;
 
 		
 		Log.d(TAG, "In BackgroundService - OnCreate");
 		this.locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		this.notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		
-		this.username = Utils.getStringPreference(this, Configuration.USERNAME, "anonymous");
+		this.username = Utils.getStringPreference(this, Constants.USERNAME, "anonymous");
 		this.lastLocationUploadToServer = System.currentTimeMillis();
 		
 	}
@@ -298,45 +297,30 @@ public class BackgroundService extends Service {
 	private static final long MIN_TIME_BETWEEN_ALERTS = 10 * 60 * 1000;//TODO: Change to something reasonable
 	private ConcurrentHashMap<Integer, Long> lastTime = new ConcurrentHashMap<Integer, Long>();
 
+	/**
+	 * Checks if geofence has been breached
+	 * @param lat latitude of center of geofence
+	 * @param lon longitude of center of geofence
+	 * @param accuracy accuracy of GPS listener 
+	 */
 	private void doXLabChecks(double lat, double lon, float accuracy) {
 
 		Log.d(TAG,"In doXLabChecks");
-		for(Map.Entry<Integer, Experiment> entry : appState.getXLabExps().entrySet()) {
-			Experiment exp = entry.getValue();
+		String[] expNames = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
+		for(String expName : expNames) {
 
-			Log.d(TAG,"Examining " + exp.getTitle() + ": isAnswered = " + exp.isDone() + ": radius = " + exp.getRadius() + ", accuracy = " + accuracy + ", distance = " + Utils.getDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon));
-			//Consider this fix only if the accuracy is at least 100% of the radius specified in the geofence
-			if(! exp.isDone() &&  (exp.getRadius() * 1.0f) >= accuracy && 
-					Utils.getDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon) <= exp.getRadius()) {
-				Log.d(TAG,"Starting thread for " + exp.getTitle());
-				//Show a notification
-				Thread t = new Thread( new UploadXLabTask(exp) );
-				t.start();
+			Experiment exp;
+			SharedPreferences expSP = context.getSharedPreferences(expName, Context.MODE_PRIVATE);
+			
+			if (expSP.getInt("typeId", -1) == Constants.XLAB_TQ_EXP) {				
+				exp = new ExperimentTextQuestion(context, expSP);
+			} else {
+				exp = new ExperimentBudgetLine(context, expSP);
 			}
 			
-		}
-
-	}
-	
-	/**
-	 * Upload XLab task status to the server 
-	 * 
-	 * @author Daniel Vizzini
-	 */
-	private class UploadXLabTask implements Runnable {
-		private NotificationManager notificationManager  = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		private Experiment exp;
-
-		public UploadXLabTask(Experiment exp) {
-			super();
-			Log.d(TAG,"In UploadXlabBL constructor");
-			this.exp = exp;
-		}
-
-		@Override
-		public void run() {
-			
-			try{
+			Log.d(TAG,"Examining " + exp.getTitle() + ": isAnswered = " + exp.isDone() + ": radius = " + exp.getRadius() + ", accuracy = " + accuracy + ", distance = " + Utils.getDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon));
+			//Consider this fix only if the accuracy is at least 100% of the radius specified in the geofence
+			if(! exp.isDone() &&  (exp.getRadius() * 1.0f) >= accuracy && Utils.getDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon) <= exp.getRadius()) {
 				lastTime.putIfAbsent(exp.getExpId(), (long)0);
 				Log.d(TAG,"a" + new Long(System.currentTimeMillis()).toString());
 				Log.d(TAG,"b" + new Long(lastTime.get(exp.getExpId())).toString());
@@ -344,34 +328,14 @@ public class BackgroundService extends Service {
 				if (System.currentTimeMillis() - lastTime.get(exp.getExpId()) > MIN_TIME_BETWEEN_ALERTS) {
 					
 					lastTime.put(exp.getExpId(), System.currentTimeMillis());
-					int icon = R.drawable.ic_stat_x_notification;
-					CharSequence tickerText = "X-Lab Alert";
-					long when = System.currentTimeMillis();
-					
-					Log.d(TAG,"Running UploadXlabBL");
-					Notification notification = new Notification(icon, tickerText, when);
-					notification.flags = Notification.FLAG_AUTO_CANCEL;
-					notification.defaults |= Notification.DEFAULT_SOUND;
-					notification.defaults |= Notification.DEFAULT_VIBRATE;
-					notification.defaults |= Notification.DEFAULT_LIGHTS;
-					
-					Context context = getApplicationContext();
-					CharSequence contentTitle = "X-Lab Alert";
-					CharSequence contentText = this.exp.getTitle();
-					Intent notificationIntent = new Intent(getApplicationContext(), exp.getActivity());
-					notificationIntent.putExtra("expId", exp.getExpId());
-					PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
-		
-					notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
-					Log.d(TAG,"UploadXlabBL notify for " + this.exp.getTitle());
-					notificationManager.cancel(exp.getExpId());
-					notificationManager.notify(exp.getExpId(), notification);
-
+					Log.d(TAG,"Starting thread for " + exp.getTitle());
+					//Show a notification
+					Thread t = new Thread( new Notifier(context, notificationManager, exp) );
+					t.start();
+				
 				}
 			}
-			catch(Exception e){
-				Log.e(TAG,e.toString());
-			}
 		}
-	}
+	}	
+	
 }

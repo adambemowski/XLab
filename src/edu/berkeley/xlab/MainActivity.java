@@ -1,20 +1,21 @@
 package edu.berkeley.xlab;
 
+import java.io.File;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import edu.berkeley.xlab.BackgroundService;
+import edu.berkeley.xlab.constants.Constants;
 import edu.berkeley.xlab.util.Utils;
 import edu.berkeley.xlab.xlab_objects.*;
 
+import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -35,14 +36,11 @@ public class MainActivity extends ListActivity {
 	/** application context for Shared Preferences */
 	private Context context;
 
-	/** Application state to access "global" variables and methods */
-	private App appState;
-	
 	/** boolean for if GPS is currently operating */
 	private boolean backgroundRunning;
 	
-	/** xLabExps are the "global" ConcurrentHashMap of Experiments */
-	private ConcurrentHashMap<Integer, Experiment> xLabExps;
+	/** expNames is an array of names of all the SharedPreferences of saved experiments*/
+	String[] expNames;
 
 	@Override
 	public void onCreate(Bundle bundle) {
@@ -50,7 +48,6 @@ public class MainActivity extends ListActivity {
 		super.onCreate(bundle);
 		Log.d(TAG, "In MainActivity -- OnCreate");
 		context = getApplicationContext();
-		appState = (App) context;
 		new RefreshExperiments(context, LIST_ACTIVITY, true).execute();
 		
 	}
@@ -58,7 +55,7 @@ public class MainActivity extends ListActivity {
 	@Override
 	public void onResume() {
 		super.onResume();
-		xLabExps = appState.getXLabExps();
+		expNames = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
 		populate();		
 	}
 	
@@ -99,9 +96,41 @@ public class MainActivity extends ListActivity {
 					item.setTitle(getString(R.string.menu_turnoff));
 					return true;
 				}
-			case R.id.debugBL:
-				doXLabChecks(37.87557,-122.260108,10);
+			case R.id.deleteSPs:
+				
+				String[] expNames = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
+				
+				if (!expNames[0].equals("")) {
+					SharedPreferences sharedPreferences;
+					for (String expName : expNames) {
+						sharedPreferences = context.getSharedPreferences(expName, Context.MODE_PRIVATE);
+						switch(sharedPreferences.getInt("typeId", -1)) {
+						case Constants.XLAB_TQ_EXP:
+							new ExperimentTextQuestion(context,sharedPreferences).deleteSharedPreferences(context);
+							break;
+						case Constants.XLAB_BL_EXP:
+							new ExperimentBudgetLine(context,sharedPreferences).deleteSharedPreferences(context);
+							break;
+						}
+					}
+				}		
+
+				new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + Experiment.EXP_LIST + ".xml").delete();//unnecessary, but good housekeeping
+
+				String[] responseNames = context.getSharedPreferences(Response.RESPONSES_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
+				
+				if (!responseNames[0].equals("")) {
+					for (String responseName : responseNames) {
+						new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + responseName + ".xml").delete();		
+					}
+				}		
+
+				new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + Response.RESPONSES_LIST + ".xml").delete();
+
+				new RefreshExperiments(context, this, false).execute();			
+
 				return true;
+
 			case R.id.debugTQ:
 				doXLabChecks(37.87213, -122.25787,10);
 				return true;
@@ -123,21 +152,36 @@ public class MainActivity extends ListActivity {
 		
 		ArrayList<ConcurrentHashMap<String, String>> listItem = new ArrayList<ConcurrentHashMap<String, String>>();			 
 	    ConcurrentHashMap<String, String> map;
-		final int[] expIds = new int[xLabExps.size() + 1];
+	    Log.d(TAG, "expNames.length: " + expNames.length);
+		final int[] expIds = new int[expNames.length + 1];
 		int i = 0;
+	    SharedPreferences sharedPreferences;
 	    
-	    for (Experiment exp : xLabExps.values()) {
-		    map = new ConcurrentHashMap<String, String>();
-		    map.put("title", exp.getTitle());
-		    map.put("location", exp.getLocation());
-		    if (exp.getActivity().getName().equals(ExpActivityTextQuestion.class.getName())) {
-		    	map.put("img", String.valueOf(R.drawable.ic_tq));
-		    } else if (exp.getActivity().getName().equals(ExpActivityBudgetLine.class.getName())) {
-		    	map.put("img", String.valueOf(R.drawable.ic_bl));
-		    }
-		    listItem.add(map);		    	
-			expIds[i] = exp.getExpId();
-			i++;
+	    if (!expNames[0].equals("")) {
+		    for (String expName : expNames) {
+		    	
+		    	sharedPreferences = context.getSharedPreferences(expName, Context.MODE_PRIVATE);
+		    	
+			    map = new ConcurrentHashMap<String, String>();
+			    map.put("title", sharedPreferences.getString("title", ""));
+			    
+			    String location = sharedPreferences.getString("location", "");
+			    String[] sessionNames = sharedPreferences.getString("sessions", "").split(",");
+			    String[] lineNames = context.getSharedPreferences(sessionNames[0], Context.MODE_PRIVATE).getString("lines", "").split(",");
+			    int unitsLeft = (sessionNames.length - 1 - sharedPreferences.getInt("currSession", 0)) * lineNames.length + lineNames.length -sharedPreferences.getInt("currLine", 0);
+			    map.put("location", (location != "") ? location : unitsLeft + ((unitsLeft == 1) ? " line left" : " lines left"));
+			    switch(sharedPreferences.getInt("typeId", Constants.XLAB_TQ_EXP)) {
+			    case Constants.XLAB_TQ_EXP:
+			    	map.put("img", String.valueOf(R.drawable.ic_tq));
+			    	break;
+			    case Constants.XLAB_BL_EXP:
+			    	map.put("img", String.valueOf(R.drawable.ic_bl));
+			    	break;
+			    }
+			    listItem.add(map);		    	
+				expIds[i] = sharedPreferences.getInt("expId", -1);
+				i++;
+		    }	    	
 	    }
 	    
 	    map = new ConcurrentHashMap<String, String>();
@@ -156,10 +200,39 @@ public class MainActivity extends ListActivity {
 				
 				if (expIds[position] != 0) {
 					
-					Intent intent = new Intent(context, xLabExps.get(expIds[position]).getActivity());
-					intent.putExtra("expId", expIds[position]);
+					SharedPreferences clickedSP = context.getSharedPreferences(Experiment.makeSPName(expIds[position]), Context.MODE_PRIVATE);
+					Class<?> activity;
+					int typeId = clickedSP.getInt("typeId", Constants.XLAB_BL_EXP);
 					
-					LIST_ACTIVITY.startActivity(intent);				
+				    if (typeId == Constants.XLAB_BL_EXP) {
+				    	activity = ExpActivityBudgetLine.class;
+				    } else {
+				    	activity = ExpActivityTextQuestion.class;
+				    }
+					
+					Intent intent = new Intent(context, activity);
+					intent.putExtra("expId", expIds[position]);
+					Log.d(TAG, "Experiment.makeSPName(expIds[position]: " + Experiment.makeSPName(expIds[position]));
+					long nextTime = clickedSP.getLong("nextTime", 2000000000000L);//default timestamp is in the year 2033
+										
+					if (typeId == Constants.XLAB_BL_EXP) {
+						
+						if (clickedSP.getInt("timer_status", -1) == Constants.TIMER_STATUS_RESTRICTIVE && System.currentTimeMillis() < nextTime) {
+					        
+							AlertDialog.Builder timeBuilder = new AlertDialog.Builder(MainActivity.this);
+
+					        timeBuilder.setMessage("You cannot participate in this experiment until " + Utils.getRelativeTime(nextTime) + ". Please try again at this time.");
+
+					        timeBuilder.setPositiveButton("OK", null);
+					        AlertDialog timeAlert = timeBuilder.create();
+					        timeAlert.show();
+					        
+						} else {
+							LIST_ACTIVITY.startActivity(intent);
+						}
+					} else {
+						LIST_ACTIVITY.startActivity(intent);						
+					}
 					
 				} else {
 					new RefreshExperiments(context, LIST_ACTIVITY, true).execute();
@@ -169,87 +242,33 @@ public class MainActivity extends ListActivity {
 		});		
 	}
 	
-	//TODO: After working, copy following classes into BackgroundService and delete
+	//TODO: Delete this!
 	//DV: For Debugging. Will only be in BackgroundService in Production Version
-	//Notification ID
-	private static final long MIN_TIME_BETWEEN_ALERTS = 0;//10 * 60 * 1000;//TODO: Change to something reasonable
-	private ConcurrentHashMap<Integer, Long> lastTime = new ConcurrentHashMap<Integer, Long>();
-
 	private void doXLabChecks(double lat, double lon, float accuracy) {
 
 		Log.d(TAG,"In doXLabChecks");
-		for(Map.Entry<Integer, Experiment> entry : appState.getXLabExps().entrySet()) {
-			Experiment exp = entry.getValue();
+		for(String expName : expNames) {
 
+			Experiment exp;
+			SharedPreferences expSP = context.getSharedPreferences(expName, Context.MODE_PRIVATE);
+			
+			if (expSP.getInt("typeId", -1) == Constants.XLAB_TQ_EXP) {				
+				exp = new ExperimentTextQuestion(context, expSP);
+			} else {
+				exp = new ExperimentBudgetLine(context, expSP);
+			}
+			
 			Log.d(TAG,"Examining " + exp.getTitle() + ": isAnswered = " + exp.isDone() + ": radius = " + exp.getRadius() + ", accuracy = " + accuracy + ", distance = " + Utils.getDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon));
 			//Consider this fix only if the accuracy is at least 100% of the radius specified in the geofence
-			if(! exp.isDone() &&  (exp.getRadius() * 1.0f) >= accuracy && 
-					Utils.getDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon) <= exp.getRadius()) {
+			if(! exp.isDone() &&  (exp.getRadius() * 1.0f) >= accuracy && Utils.getDistanceFromLatLon(exp.getLat(), exp.getLon(), lat, lon) <= exp.getRadius()) {
+
 				Log.d(TAG,"Starting thread for " + exp.getTitle());
 				//Show a notification
-				Thread t = new Thread( new UploadXLabTask(exp,false) );
+				Thread t = new Thread( new Notifier(context, (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE), exp) );
 				t.start();
+				
 			}
-			
 		}
-
 	}
 	
-	/**
-	 * Upload XLab task status to the server 
-	 * 
-	 * @author Daniel Vizzini
-	 */
-	private class UploadXLabTask implements Runnable {
-		private NotificationManager notificationManager  = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		private Experiment exp;
-		private boolean timed;
-
-		public UploadXLabTask(Experiment exp, boolean timed) {
-			super();
-			Log.d(TAG,"In UploadXlabBL constructor without default timed");
-			this.exp = exp;
-			this.timed = timed;
-		}
-
-		@Override
-		public void run() {
-			
-			try{
-				lastTime.putIfAbsent(exp.getExpId(), (long)0);
-				Log.d(TAG,"a" + new Long(System.currentTimeMillis()).toString());
-				Log.d(TAG,"b" + new Long(lastTime.get(exp.getExpId())).toString());
-				Log.d(TAG,"c" + new Long(MIN_TIME_BETWEEN_ALERTS).toString());
-				if (!timed || (System.currentTimeMillis() - lastTime.get(exp.getExpId()) > MIN_TIME_BETWEEN_ALERTS)) {
-					
-					lastTime.put(exp.getExpId(), System.currentTimeMillis());
-					int icon = R.drawable.ic_stat_x_notification;
-					CharSequence tickerText = "X-Lab Alert";
-					long when = System.currentTimeMillis();
-					
-					Log.d(TAG,"Running UploadXlab");
-					Notification notification = new Notification(icon, tickerText, when);
-					notification.flags = Notification.FLAG_AUTO_CANCEL;
-					notification.defaults |= Notification.DEFAULT_SOUND;
-					notification.defaults |= Notification.DEFAULT_VIBRATE;
-					notification.defaults |= Notification.DEFAULT_LIGHTS;
-					
-					CharSequence contentTitle = "X-Lab Alert";
-					CharSequence contentText = this.exp.getTitle();
-					Intent notificationIntent = new Intent(context, exp.getActivity());
-					notificationIntent.putExtra("expId", this.exp.getExpId());
-					PendingIntent contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
-		
-					notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
-					Log.d(TAG,"UploadXlab notify for " + this.exp.getTitle());
-					notificationManager.cancel(exp.getExpId());
-					notificationManager.notify(exp.getExpId(), notification);
-
-				}
-			}
-			catch(Exception e){
-				Log.e(TAG,e.toString());
-			}
-		}
-	}	
 }

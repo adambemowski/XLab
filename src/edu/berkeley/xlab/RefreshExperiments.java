@@ -3,7 +3,10 @@ package edu.berkeley.xlab;
 import java.io.File;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.GregorianCalendar;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -18,13 +21,14 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
-import edu.berkeley.xlab.constants.Configuration;
+import edu.berkeley.xlab.constants.Constants;
+import edu.berkeley.xlab.timers.TimerDynamic;
+import edu.berkeley.xlab.timers.TimerStatic;
 import edu.berkeley.xlab.util.Utils;
 import edu.berkeley.xlab.xlab_objects.Experiment;
 import edu.berkeley.xlab.xlab_objects.ExperimentBudgetLine;
 import edu.berkeley.xlab.xlab_objects.ExperimentTextQuestion;
 import edu.berkeley.xlab.xlab_objects.Response;
-import edu.berkeley.xlab.xlab_objects.Session;
 import edu.berkeley.xlab.xlab_objects.XLabSuperObject;
 
 /**
@@ -70,26 +74,38 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 	/** calling Activity */
 	private Activity activity;
 	
-	/** application-level array of experiment objects */
-	private ConcurrentHashMap<Integer, Experiment> xLabExps;
-	
 	/** Application state to access "global" variables and methods */
-	private App appState;
+	//private App appState;
 	
 	/** Clears experiment from phone if called */
-	private int toBeRemovedId;
+	private Experiment toBeRemoved;
+	
+	/** True is there is an Experiment object toBeRemove, false otherwise*/
+	private boolean toBeRemovedBool;
+	
+	/** True if interacts with UI, false otherwise */
+	private boolean showMessages;
+	
+	/** Boolean to indicate whether messages should be displayed in UI
 	
 	/** 
 	 * @param context Application Context
 	 * @param activity Calling Activity
 	 * @param downloadFlag true if task also downloads experiments, false otherwise
+	 * @param toBeRemovedId experiment to be removed from "global" map and SharedPreferences. The constructor with this is a crutch and should be deleted after TODO below is addressed
 	 */
-	public RefreshExperiments(Context context, Activity activity, boolean downloadFlag, int toBeRemovedId) {
-		this.context = context;
+	public RefreshExperiments(Context context, Activity activity, boolean downloadFlag, Experiment toBeRemoved) {
 		this.activity = activity;
-		this.downloadFlag = downloadFlag;
-		this.appState = (App) context;
-		this.toBeRemovedId = toBeRemovedId;
+		initialize(context, downloadFlag, toBeRemoved, true);
+	}
+		
+	/** 
+	 * @param context Application Context
+	 * @param downloadFlag true if task also downloads experiments, false otherwise
+	 * @param toBeRemovedId experiment to be removed from "global" map and SharedPreferences. The constructor with this is a crutch and should be deleted after TODO below is addressed
+	 */
+	public RefreshExperiments(Context context, boolean downloadFlag, Experiment toBeRemoved) {
+		initialize(context, downloadFlag, toBeRemoved, false);
 	}
 		
 	/** 
@@ -98,24 +114,48 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 	 * @param downloadFlag true if task also downloads experiments, false otherwise
 	 */
 	public RefreshExperiments(Context context, Activity activity, boolean downloadFlag) {
-		this.context = context;
 		this.activity = activity;
+		initialize(context, downloadFlag, true);
+	}
+	
+	/** 
+	 * @param context Application Context
+	 * @param activity Calling Activity
+	 * @param downloadFlag true if task also downloads experiments, false otherwise
+	 * @param showMessages True if interacts with UI, false otherwise 
+	 */
+	public RefreshExperiments(Context context, boolean downloadFlag) {
+		initialize(context, downloadFlag,  false);
+	}
+	
+	private void initialize(Context context, boolean downloadFlag, boolean showMessages) {
+		this.context = context;
 		this.downloadFlag = downloadFlag;
-		this.appState = (App) context;
-		this.toBeRemovedId = -1;
+		this.showMessages = showMessages;
+		this.toBeRemovedBool = false;
+	}
+
+	private void initialize(Context context, boolean downloadFlag, Experiment toBeRemoved, boolean showMessages) {
+		this.context = context;
+		this.downloadFlag = downloadFlag;
+		this.toBeRemoved = toBeRemoved;
+		this.toBeRemovedBool = true;
+		this.showMessages = showMessages;
 	}
 	
 	@Override
 	protected void onPreExecute() {
 
-		//Initialize values and show dialog
-		dialog = new ProgressDialog(activity);
-		dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		dialog.setMessage("Connecting to XLab server...");
-		dialog.show();
+		if (showMessages) {
+			//Initialize values and show dialog
+			dialog = new ProgressDialog(activity);
+			dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+			dialog.setMessage("Connecting to XLab server...");
+			dialog.show();			
+		}
 		
-		this.username = Utils.getStringPreference(context, Configuration.USERNAME, "anonymous");
-		this.xLabExps = appState.getXLabExps();
+		this.username = Utils.getStringPreference(context, Constants.USERNAME, "anonymous");
+		//this.xLabExps = appState.getXLabExps();
 		
 		successful = true;
 		downloaded = 0;
@@ -172,68 +212,35 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 				
 	}
 	
-	/** displays finishing dialog and resets RESPONSES_LIST
+	/** 
+	 * Displays finishing dialog and resets RESPONSES_LIST
 	 * Deletes specified Experiment from App Class and ShaaredPreferences associated with the parameters of the experiment.
 	 */
 	private void finishUp() {
 		
 		//TODO: Get everything in if statement to Experiment objects after "done" variable is added to server
 		//Remove Experiment from SharedPreferences
-		if (toBeRemovedId != -1) {
+		if (toBeRemovedBool) {
 			
-			//retrieve experiment
-			Experiment toBeRemoved = this.xLabExps.get(toBeRemovedId);
-			
-			//remove from application-level variable
-			this.xLabExps.remove(toBeRemovedId);
-			
-			//delete SharedPreferences
-			Log.d(TAG,"File to be deleted: " + "/data/data/" + context.getPackageName() + "/shared_prefs/" + toBeRemoved.getSPName() + ".xml");
-			new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + toBeRemoved.getSPName() + ".xml").delete();
-			
-			//delete child SharedPreferences
-			if (toBeRemoved.getTypeId() == Configuration.XLAB_BL_EXP) {
-
-				for (Session session : ((ExperimentBudgetLine) toBeRemoved).getSessions()){
-					session.deleteSharedPreferences(context);
-				}
-
-			}
-			
-			//remove from SharedPrefrences list of SharedPreferences
-			SharedPreferences sharedPreferencesList = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE);
-			SharedPreferences.Editor listEditor = sharedPreferencesList.edit();
-
-			String[] halfList = sharedPreferencesList.getString("SharedPreferences","").split(toBeRemoved.getSPName() + ",");
-			
-			if (halfList.length == 0) {
-				Log.d(TAG,"Empty EXP_LIST");
-				listEditor.putString("SharedPreferences", "");			
-			} else if (halfList.length == 1) {
-				Log.d(TAG,"EXP_LIST is " + halfList[0]);
-				listEditor.putString("SharedPreferences", halfList[0]);						
-			} else {
-				Log.d(TAG,"EXP_LIST is " + halfList[0] + halfList[1]);
-				listEditor.putString("SharedPreferences", halfList[0] + halfList[1]);
-			}
-			
-			listEditor.commit();
-			
-			toBeRemoved = null;//good housekeeping
+			toBeRemoved.deleteSharedPreferences(context);
 						
 		}
 		
-		//God bless StackOverflow http://stackoverflow.com/questions/3875184/cant-create-handler-inside-thread-that-has-not-called-looper-prepare
-		Thread uiThread = new HandlerThread("UIHandler");
-		uiThread.start();
-	    UIHandler uiHandler = new UIHandler(((HandlerThread) uiThread).getLooper());
-	    Message msg = uiHandler.obtainMessage();		    
-	    
 		XLabSuperObject.setList(context, Response.RESPONSES_LIST, responseNamesArrayList);
 	    
-		dialog.dismiss();
+		if (showMessages) {
+			//God bless StackOverflow http://stackoverflow.com/questions/3875184/cant-create-handler-inside-thread-that-has-not-called-looper-prepare
+			Thread uiThread = new HandlerThread("UIHandler");
+			uiThread.start();
+		    UIHandler uiHandler = new UIHandler(((HandlerThread) uiThread).getLooper());
+		    Message msg = uiHandler.obtainMessage();		    
+		    
+			dialog.dismiss();
+			
+		    uiHandler.sendMessage(msg);			
+		}
 		
-	    uiHandler.sendMessage(msg);
+		Log.d(TAG,"EXP_LIST: " + context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "Not good"));
 		
 	}
 	
@@ -254,7 +261,7 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 	    public void handleMessage(Message msg)
 	    {
 			AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-			String message = ((downloaded > 0) ? "Your phone downloaded " + downloaded + " experiment" + ((downloaded > 1) ? "s" : "") : ((successful) ? "Your phone conected to the the Xlab but no new experiments are available for download. Please try again later by restarting the app or selecting Refresh Experiments." : ""));
+			String message = ((downloaded > 0) ? "Your phone downloaded " + downloaded + " experiment" + ((downloaded > 1) ? "s" : "") : ((successful) ? "Your phone conected to the the Xlab but no new experiments are available for download. You may want to check in the future by selecting Refresh Experiments." : ""));
 			message = ((uploaded > 0 ) ? "The XLab server received " + uploaded + " results." : "There were no results to upload.") + ((downloadFlag) ? "\n\n" + message : "");
 			message = ((successful) ? "Refresh was succesful.\n\n" + message : "Refresh was not fully successful. Please try again later by selecting Refresh Experiments.");
 			builder.setMessage(message);
@@ -306,10 +313,10 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 			this.expId = sharedPreferences.getInt("expId",-1);
 
 			switch (typeId) {
-			case Configuration.XLAB_TQ_EXP:
+			case Constants.XLAB_TQ_EXP:
 				this.answer = sharedPreferences.getString("answer","");
 				break;
-			case Configuration.XLAB_BL_EXP:
+			case Constants.XLAB_BL_EXP:
 				this.sessionId = sharedPreferences.getInt("sessionId",-1);
 				this.lineId = sharedPreferences.getInt("lineId",-1);
 				this.x_int = sharedPreferences.getFloat("x_int", (float)-1);
@@ -336,9 +343,9 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 				
 				switch (typeId) {
 				
-				case Configuration.XLAB_TQ_EXP:
-					Log.d(TAG,Configuration.XLAB_API_ENDPOINTS[0] + "?tq_id=" + expId + "&tq_response=" + URLEncoder.encode(answer, "utf-8") + "&tq_username=" + username + "&tq_lat=" + BackgroundService.getLastLat() + "&tq_lon=" + BackgroundService.getLastLon());
-					http_response = Utils.getData(Configuration.XLAB_API_ENDPOINTS[0] + "?tq_id=" + expId + "&tq_response=" + URLEncoder.encode(answer, "utf-8") + "&tq_username=" + username + "&tq_lat=" + BackgroundService.getLastLat() + "&tq_lon=" + BackgroundService.getLastLon());
+				case Constants.XLAB_TQ_EXP:
+					Log.d(TAG,Constants.XLAB_API_ENDPOINTS[Constants.XLAB_TQ_EXP] + "?tq_id=" + expId + "&tq_response=" + URLEncoder.encode(answer, "utf-8") + "&tq_username=" + username + "&tq_lat=" + BackgroundService.getLastLat() + "&tq_lon=" + BackgroundService.getLastLon());
+					http_response = Utils.getData(Constants.XLAB_API_ENDPOINTS[0] + "?tq_id=" + expId + "&tq_response=" + URLEncoder.encode(answer, "utf-8") + "&tq_username=" + username + "&tq_lat=" + BackgroundService.getLastLat() + "&tq_lon=" + BackgroundService.getLastLon());
 
 					if(null == http_response) {
 						Log.e(TAG, "Received null response");
@@ -355,15 +362,15 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 					
 					break;
 
-				case Configuration.XLAB_BL_EXP:
-					Log.d(TAG,Configuration.XLAB_API_ENDPOINTS[1]
+				case Constants.XLAB_BL_EXP:
+					Log.d(TAG,Constants.XLAB_API_ENDPOINTS[Constants.XLAB_BL_EXP]
 							+ "?bl_id=" + expId + "&bl_session=" + sessionId + "&bl_line=" + lineId + "&bl_username=" + username
 							+ "&bl_lat=" + BackgroundService.getLastLat()
 							+ "&bl_lon=" + BackgroundService.getLastLon()
 							+ "&bl_x=" + x_chosen + "&bl_y=" + y_chosen
 							+ "&bl_x_intercept=" + x_int + "&bl_y_intercept=" + y_int
 							+ "&bl_winner=" + winner + "&bl_line_chosen_boolean=" + line_chosen_boolean);
-					http_response = Utils.getData(Configuration.XLAB_API_ENDPOINTS[1]
+					http_response = Utils.getData(Constants.XLAB_API_ENDPOINTS[Constants.XLAB_BL_EXP]
 							+ "?bl_id=" + expId + "&bl_session=" + sessionId + "&bl_line=" + lineId + "&bl_username=" + username
 							+ "&bl_lat=" + BackgroundService.getLastLat()
 							+ "&bl_lon=" + BackgroundService.getLastLon()
@@ -407,55 +414,13 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 	private void fetchXLabExps() {
 		
 		Log.d(TAG, "outstanding: " + outstanding);
-				
-		uploadInternalExps();
-		
+						
 		//fetch experiments from server		
-		for (int i = 0; i < Configuration.XLAB_API_ENDPOINTS.length; i++)  {
+		for (int i = 0; i < Constants.XLAB_API_ENDPOINTS.length; i++)  {
+			Log.d(TAG, Constants.XLAB_API_ENDPOINTS[i]);
 			new Thread( new Fetcher(i) ).start();				
 		}
 			
-	}
-	
-	private void uploadInternalExps() {
-
-		SharedPreferences expSP;
-		String[] expNames = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
-
-		Log.d(TAG, "exp SharedPreferences: " + context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", ""));
-		
-		//Get persistently stored experiments
-		if (!expNames[0].equals("")) {
-			for (String expName : expNames) {
-				
-				Log.d(TAG,"Retrieving " + expName);
-				
-				expSP = context.getSharedPreferences(expName, Context.MODE_PRIVATE);
-				
-				switch (expSP.getInt("typeId", -1)) {
-				
-				case Configuration.XLAB_TQ_EXP:
-					
-					if (!xLabExps.containsKey(expSP.getInt("expId", -1))) {
-						ExperimentTextQuestion tq = new ExperimentTextQuestion(context, context.getSharedPreferences(expName, Context.MODE_PRIVATE));
-						appState.appendToXLabExps(tq);
-					}
-
-					break;
-					
-				case Configuration.XLAB_BL_EXP:
-					
-					if (!xLabExps.containsKey(expSP.getInt("expId", -1))) {
-						ExperimentBudgetLine bl = new ExperimentBudgetLine(context, context.getSharedPreferences(expName, Context.MODE_PRIVATE));
-						appState.appendToXLabExps(bl);
-					}
-					
-					break;
-					
-				}
-				
-			}
-		}
 	}
 	
 	class Fetcher implements Runnable {
@@ -475,7 +440,7 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 
 				outstanding++;
 
-				endpoint = Configuration.XLAB_API_ENDPOINTS[index];
+				endpoint = Constants.XLAB_API_ENDPOINTS[index] + "?format=json";
 				Log.d(TAG, "Sending request to server: " + endpoint);
 
 				response = Utils.getData(endpoint);
@@ -486,32 +451,58 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 					if (!response.equals("blank")) {
 
 						// Parse the response
-						String[] lines = response.split("\n");
+						//String[] lines = response.split("\n");
+						JSONArray jsonArray = new JSONArray (response);
+						JSONObject json;
+						Log.d(TAG, "jsonArray.toString(): " + jsonArray.toString());
 
-						for (String line : lines) {
+						for (int i = 0; i < jsonArray.length(); i++) {
 
+							json = jsonArray.getJSONObject(i);
+							Log.d(TAG, "json " + i + ": " + json);
+							
 							switch (index) {
 							
-							case Configuration.XLAB_TQ_EXP:
+							case Constants.XLAB_TQ_EXP:
 								
-								ExperimentTextQuestion tq = new ExperimentTextQuestion(context, line);
-
-								if (!xLabExps.containsKey(tq.getExpId())) {
-									appState.appendToXLabExps(tq);
-									tq.save(context);
+								Log.d(TAG,"json.getInt(\"id\"):" + json.getInt("id"));
+								
+								if (!Utils.checkIfSaved(context, Experiment.makeSPName(json.getInt("id")), Experiment.EXP_LIST)) {
+									new ExperimentTextQuestion(context, json);
 									downloaded++;
 								}
 								
 								break;
 								
-							case Configuration.XLAB_BL_EXP:
-								
-								ExperimentBudgetLine bl = new ExperimentBudgetLine(context, line);
-
-								if (!xLabExps.containsKey(bl.getExpId())) {
-									appState.appendToXLabExps(bl);
-									bl.save(context);
+							case Constants.XLAB_BL_EXP:
+								if (!Utils.checkIfSaved(context, Experiment.makeSPName(json.getInt("id")), Experiment.EXP_LIST)) {
+									Log.d(TAG, "About to create bl object");
+									ExperimentBudgetLine bl = new ExperimentBudgetLine (context, json);
 									downloaded++;
+									Log.d(TAG, "downloaded: " + downloaded);
+									
+									//construct timer if necessary
+									Log.d(TAG,"bl.getTimer_status(): " + bl.getTimer_status());
+									switch(bl.getTimer_status()) {
+									case Constants.TIMER_STATUS_REMINDER:
+									case Constants.TIMER_STATUS_RESTRICTIVE:
+										JSONObject timerJson = json.getJSONObject("timer");
+										boolean[] dayEligibility = {timerJson.getBoolean("boolSunday"),timerJson.getBoolean("boolMonday"),timerJson.getBoolean("boolTuesday"),timerJson.getBoolean("boolWednesday"),timerJson.getBoolean("boolThursday"),timerJson.getBoolean("boolFriday"),timerJson.getBoolean("boolSaturday")};
+										switch(timerJson.getInt("timer_type")) {
+										case Constants.TIMER_STATIC:
+
+											JSONObject startDateJson = timerJson.getJSONObject("startDate");
+											JSONObject endDateJson = timerJson.getJSONObject("endDate");
+											
+											new TimerStatic(context, bl, dayEligibility, new GregorianCalendar(startDateJson.getInt("year"),startDateJson.getInt("month") - 1,startDateJson.getInt("date")),  new GregorianCalendar(endDateJson.getInt("year"),endDateJson.getInt("month") - 1,endDateJson.getInt("date")), timerJson.getInt("startTime"), timerJson.getInt("endTime"));
+											break;
+										case Constants.TIMER_DYNAMIC:
+											new TimerDynamic(context, bl, dayEligibility, timerJson.getInt("min_interval"), timerJson.getInt("max_interval"));
+											break;
+										}
+										
+									}
+
 								}
 								
 								break;
@@ -529,6 +520,7 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 				checkForDone();
 				
 			} catch (Exception e) {
+				e.printStackTrace();
 				Log.e(TAG, e.toString());
 				successful = false;
 				checkForDone();

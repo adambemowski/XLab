@@ -1,6 +1,7 @@
 package edu.berkeley.xlab.xlab_objects;
 
 import java.io.File;
+import java.util.Random;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -25,13 +26,13 @@ public class Session {
 	public int getSessionId() {return sessionId;}
 	
 	private int line_chosen;
-	public int getLine_chosen() {return line_chosen;}//server-side Monte Carlo
+	public int getLine_chosen() {return line_chosen;}
 	
 	private Line[] lines;
 	public Line[] getLines() {return lines;}
 	public Line getLine(int id) {return lines[id];}
 
-	public Session (Context context, int expId, int sessionId, int line_chosen, Line[] lines) {
+	public Session(Context context, int expId, int sessionId, int line_chosen, Line[] lines) {
 		
 		this.expId = expId;
 		this.sessionId = sessionId;
@@ -44,6 +45,7 @@ public class Session {
 
 		JSONArray linesJSON = json.getJSONArray("lines");
 		Line[] lines = new Line[linesJSON.length()];
+		Random r = new Random();
 		
 		for (int i = 0; i < linesJSON.length(); i++) {
 			lines[i] = new Line(context, linesJSON.getJSONObject(i));
@@ -51,7 +53,7 @@ public class Session {
 
 		this.expId = json.getInt("expId");
 		this.sessionId = json.getInt("sessionId");
-		this.line_chosen = json.getInt("line_chosen");
+		this.line_chosen = r.nextInt(linesJSON.length());
 		this.lines = lines;
 		
 	}

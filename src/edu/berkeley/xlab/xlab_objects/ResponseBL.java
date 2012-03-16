@@ -1,6 +1,6 @@
 package edu.berkeley.xlab.xlab_objects;
 
-import edu.berkeley.xlab.constants.Configuration;
+import edu.berkeley.xlab.constants.Constants;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
@@ -29,7 +29,7 @@ public class ResponseBL extends Response {
 		
 		Log.d(TAG,"In Chosen explicit constructor");
 		
-		this.typeId = Configuration.XLAB_BL_EXP;
+		this.typeId = Constants.XLAB_BL_EXP;
 		this.expId = expId;
 		this.sessionId = sessionId;
 		this.lineId = lineId;
@@ -38,6 +38,7 @@ public class ResponseBL extends Response {
 		this.x_chosen = x_chosen;
 		this.y_chosen = y_chosen;
 		this.winner = winner;
+		this.line_chosen_boolean = line_chosen_boolean;
 		
 		this.save(context);
 		
@@ -47,7 +48,7 @@ public class ResponseBL extends Response {
 		
 		Log.d(TAG,"In Chosen SharedPreferences constructor");
 		
-		this.typeId = Configuration.XLAB_BL_EXP;
+		this.typeId = Constants.XLAB_BL_EXP;
 		this.expId = sharedPreferences.getInt("expId",-1);
 		this.sessionId = sharedPreferences.getInt("sessionId",-1);
 		this.lineId = sharedPreferences.getInt("lineId",-1);

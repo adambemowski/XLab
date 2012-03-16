@@ -1,14 +1,17 @@
 package edu.berkeley.xlab.xlab_objects;
 
+import java.io.File;
+import java.util.Random;
+
 import org.json.JSONException;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import edu.berkeley.xlab.ExpActivityBudgetLine;
-import edu.berkeley.xlab.constants.Configuration;
+import edu.berkeley.xlab.constants.Constants;
+import edu.berkeley.xlab.util.Utils;
 
 /*
  * Defines budget-line experiment
@@ -76,12 +79,15 @@ public class ExperimentBudgetLine extends Experiment {
 	private float y_min; public double getY_min() {return y_min;}
 
 	private Session[] sessions; public Session[] getSessions() {return sessions;} public Session getSession(int id) {return sessions[id];}
-	
+
 	private int currSession; public int getCurrSession() {return currSession;} 
 	public void nextSession(Context context) {
 		currSession++;
 		if (currSession == sessions.length) {
-			this.makeDone();
+			saveState(context, progress);
+			this.makeDone(context);
+		} else {
+			saveState(context, progress);
 		}
 	}	
 	
@@ -89,98 +95,100 @@ public class ExperimentBudgetLine extends Experiment {
 	private int progress; public int getProgress() {return progress;}
 	
 	/**
-	 *  Iterates to next line. Will set currLine to 0 and iterate to next session if necessary.
-	 *  Will set done to true if all sessions have been completed.
+	 * Constructor based on JSON from server. Preferred (and in the future, hopefully exclusive) way to pull info from server
+	 * @param context Application context
+	 * @param exp JSON constructed from JSON-formatted string from server
 	 */
-	public void nextLine(Context context) {
-		
-		currLine = (currLine + 1) % sessions[this.getCurrSession()].getLines().length; 
-		Log.d(TAG,"Current Line: "+currLine);
-		if (currLine == 0) {
-			this.nextSession(context);
-		}
-		
-	}
-	
 	public ExperimentBudgetLine(Context context, JSONObject json) throws NumberFormatException, JSONException {
 
-		JSONArray sessionsJSON = json.getJSONArray("sessions");
-		Session[] sessions = new Session[sessionsJSON.length()];
-		
-		for (int i = 0; i < sessionsJSON.length(); i++) {
-			sessions[i] = new Session(context, sessionsJSON.getJSONObject(i));
-		}
+		Log.d(TAG,"In XLabBudgetLine JSON constructor");
 
 		this.identify();
-		this.expId = json.getInt("expId"); this.title = json.getString("title");
-		this.location = json.getString("location"); this.lat = (float) json.getDouble("lat"); this.lon = (float) json.getDouble("lon"); this.radius = json.getInt("radius");
-		this.probabilistic = json.getBoolean("probabilistic"); this.prob_x = (float) json.getDouble("prob_x");
-		this.x_label = json.getString("x_label"); this.x_units = json.getString("x_units"); this.x_max = (float) json.getDouble("x_max"); this.x_min = (float) json.getDouble("x_min");
-		this.y_label = json.getString("y_label"); this.y_units = json.getString("y_units"); this.y_max = (float) json.getDouble("y_max"); this.y_min = (float) json.getDouble("y_min");
-		this.sessions = sessions;
-		this.initialize();
-	}
-	
-	public ExperimentBudgetLine(Context context, String exp) {
-				
-		String[] ses = exp.split("session_parser,");
-	    Session[] sessions = new Session[ses.length - 1];
+
+		JSONObject info;
+		JSONObject geofense;
+		Random r = new Random();
+
+		int numSessions;
 		
-		String[] header = ses[0].split(",");
+		int numLines;
+		int line_chosen;
 		
-		int expId = Integer.valueOf(header[0]);
-		String title = header[1];
-		String location = header[2];
-		float lat = Float.valueOf(header[3]);
-		float lon = Float.valueOf(header[4]);
-		int radius = Integer.valueOf(header[5]);
-		
-		boolean probabilistic = (header[6].equalsIgnoreCase("1") ? true : false);
-		float prob_x = Float.valueOf(header[7]);
-		
-	    String x_label = header[8];
-	    String x_units = header[9];
-	    float x_max = Float.valueOf(header[10]);
-	    float x_min = Float.valueOf(header[11]);
-	    
-	    String y_label = header[12];
-	    String y_units = header[13];
-	    float y_max = Float.valueOf(header[14]);
-	    float y_min = Float.valueOf(header[15]);
-	    		    
-	    for (int i = 0; i < sessions.length; i++) {
-	    	
-	    	String[] lines = ses[i+1].split("line_parser,");//line as in budget line, not line of text
-		    Line[] lineInput = new Line[lines.length - 1];
-		    Log.d(TAG,"lineInput array has length " + lineInput.length);
-		    header = lines[0].split(",");
-		    int sessionId = Integer.valueOf(header[0]);
-		    int line_chosen = Integer.valueOf(header[1]);
-		    
-		    for (int j = 0; j < lineInput.length; j++) {
-		    	String[] parts = lines[j+1].split(",");
-		    	lineInput[j] = new Line(context, expId, sessionId, Integer.valueOf(parts[0]),Float.valueOf(parts[1]),Float.valueOf(parts[2]),parts[3].charAt(0));
-		    }
-		    
-		    sessions[i] = new Session(context, expId, sessionId, line_chosen, lineInput);
+		char winner;
+		float x_int;
+		float y_int;
+
+		try {
+						
+			info = json.getJSONObject("budget_line_info");
+			geofense = json.getJSONObject("geofence");
 			
-	    }
-	    
-		this.identify();
-		this.expId = expId; this.title = title;
-		this.location = location; this.lat = lat; this.lon = lon; this.radius = radius;
-		this.probabilistic = probabilistic; this.prob_x = prob_x;
-		this.x_label = x_label; this.x_units = x_units; this.x_max = x_max; this.x_min = x_min;
-		this.y_label = y_label; this.y_units = y_units; this.y_max = y_max; this.y_min = y_min;
-		this.sessions = sessions;
-		this.initialize();
-	}
+			this.done = false;
+			this.expId = json.getInt("id"); this.title = info.getString("title");
+			this.location = geofense.getString("title"); this.lat = (float) geofense.getDouble("lat"); this.lon = (float) geofense.getDouble("lon"); this.radius = geofense.getInt("radius");
+			this.probabilistic = info.getBoolean("probabilistic"); this.prob_x = (float) info.getDouble("prob_x");
+			this.x_label = info.getString("x_label"); this.x_units = info.getString("x_units"); this.x_max = (float) info.getDouble("x_max"); this.x_min = (float) info.getDouble("x_min");
+			this.y_label = info.getString("y_label"); this.y_units = info.getString("y_units"); this.y_max = (float) info.getDouble("y_max"); this.y_min = (float) info.getDouble("y_min");
+			this.timer_status = json.getInt("timer_status");
+			
+			if (this.timer_status != Constants.TIMER_STATUS_NONE) {
+				this.timer_type = json.getJSONObject("timer").getInt("timer_type");
+			}
+						
+			numSessions = info.getInt("number_sessions");
+			numLines = info.getInt("lines_per_session");
+			
+			Session[] sessions = new Session[numSessions];
+			
+			Log.d(TAG,"Beginning of outer for");
+			
+			for (int i = 0; i < numSessions; i++) {
+
+				Line[] lines = new Line[numLines];
+				line_chosen = r.nextInt(numLines);
+				Log.d(TAG,"line_chosen: " + line_chosen);
+				
+				for (int j = 0; j < numLines; j++) {
+					
+					winner = (r.nextFloat() < prob_x) ? 'x' : 'y';
+					x_int = r.nextFloat() * (x_max - x_min);
+					y_int = r.nextFloat() * (y_max - y_min);
+					
+					lines[j] = new Line(context, expId, i, j, x_int, y_int, winner);
+
+				}
+				
+				sessions[i] = new Session(context, expId, i, line_chosen, lines);
+			}
+			
+			Log.d(TAG,"End of outer for");
+			
+			this.sessions = sessions;
+			
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
+		this.save(context);
+
+	}	
 	
 	public ExperimentBudgetLine(Context context, SharedPreferences sharedPreferences) {
+		this.numSkipped = 0;
+		constructFromSharedPreferences(context, sharedPreferences);
+	}
+	
+	public ExperimentBudgetLine(Context context, SharedPreferences sharedPreferences, int numSkipped) {
+		this.numSkipped = numSkipped;
+		constructFromSharedPreferences(context, sharedPreferences);
+	}
+	
+	private void constructFromSharedPreferences(Context context, SharedPreferences sharedPreferences) {
 		
 		Log.d(TAG,"In XLabBudgetLineExp SharedPreferences constructor");
 		
 		this.identify();
+		this.done = sharedPreferences.getBoolean("done", false);
 		this.expId = sharedPreferences.getInt("expId",-1);
 		this.title = sharedPreferences.getString("title","");
 		this.location = sharedPreferences.getString("location","");
@@ -197,10 +205,16 @@ public class ExperimentBudgetLine extends Experiment {
 		this.y_units = sharedPreferences.getString("y_units", "");
 		this.y_max = sharedPreferences.getFloat("y_max", (float) -1); 
 		this.y_min = sharedPreferences.getFloat("y_min", (float) -1);
+		this.timer_status = sharedPreferences.getInt("timer_status", -1);
 		this.currSession = sharedPreferences.getInt("currSession", -1);
 		this.currLine = sharedPreferences.getInt("currLine", -1);
 		this.progress = sharedPreferences.getInt("progress", -1);
+		this.numSkipped = sharedPreferences.getInt("numSkipped", -1);
 		
+		if (this.timer_status != Constants.TIMER_STATUS_NONE) {
+			this.timer_type = sharedPreferences.getInt("timer_type", -1);
+		}
+					
 		String[] sessionNames = sharedPreferences.getString("sessions", "").split(",");
 		Session[] sessions = new Session[sessionNames.length];
 		for (int i = 0; i < sessions.length; i++) {
@@ -208,13 +222,13 @@ public class ExperimentBudgetLine extends Experiment {
 			sessions[i] = new Session(context, context.getSharedPreferences(sessionNames[i], Context.MODE_PRIVATE));
 		}
 
-		this.sessions = sessions;
-		
+		this.sessions = sessions;		
+
 	}
 	
 	/** method of instantiations common to all constructors */
 	private void identify() {
-		this.typeId = Configuration.XLAB_BL_EXP;
+		this.typeId = Constants.XLAB_BL_EXP;
 		this.activity = ExpActivityBudgetLine.class;		
 	}
 
@@ -225,48 +239,75 @@ public class ExperimentBudgetLine extends Experiment {
 		this.currLine = 0;
 	}
 	
-	@Override
-	public void save(Context context) {
+	/**
+	 *  Iterates to next line. Will set currLine to 0 and iterate to next session if necessary.
+	 *  Will set done to true if all sessions have been completed.
+	 */
+	public void nextLine(Context context) {
 		
-		Log.d(TAG, "Saving " + title);
-		
-		String sessionsString = "";
-		
-		for (Session session : sessions){
-			sessionsString = sessionsString + Session.SESSION_PREFIX + expId + "_" + session.getSessionId() + ",";
-			session.save(context);
+		currLine = (currLine + 1) % sessions[this.getCurrSession()].getLines().length; 
+		Log.d(TAG,"Current Line: " + currLine);
+		if (currLine == 0) {
+			this.nextSession(context);
+		} else {
+			saveState(context, progress);
 		}
+		
+	}
+	
+	@Override
+	protected void save(Context context) {
+		
+		Log.d(TAG, "In save of " + title);
 
-		SharedPreferences sharedPreferences = context.getSharedPreferences(getSPName(), Context.MODE_PRIVATE);
-		SharedPreferences.Editor editor = sharedPreferences.edit();
-		
-		editor.putInt("typeId", typeId);
-		editor.putInt("expId", expId);
-		editor.putString("title", title);
-		editor.putString("location", location);
-		editor.putFloat("lat", lat);
-		editor.putFloat("lon", lon); 
-		editor.putInt("radius", radius);
-		editor.putBoolean("probabilistic", probabilistic);
-		editor.putFloat("prob_x", prob_x);
-		editor.putString("x_label", x_label);
-		editor.putString("x_units", x_units);
-		editor.putFloat("x_max", x_max); 
-		editor.putFloat("x_min", x_min);
-		editor.putString("y_label", y_label);
-		editor.putString("y_units", y_units);
-		editor.putFloat("y_max", y_max); 
-		editor.putFloat("y_min", y_min);
-		editor.putInt("currSession", currSession);
-		editor.putInt("currLine", currLine);
-		editor.putString("sessions",sessionsString);
-		editor.putInt("currSession", currSession);
-		editor.putInt("currLine", currLine);
-		editor.putInt("progress", progress);
-		editor.commit();
-		
-		appendList(context, EXP_LIST);
-		
+		if (!Utils.checkIfSaved(context, getSPName(), Experiment.EXP_LIST)) {
+			
+			Log.d(TAG, "Saving " + title);
+			
+			String sessionsString = "";
+			
+			this.initialize();
+			
+			for (Session session : sessions) {
+				sessionsString = sessionsString + Session.SESSION_PREFIX + expId + "_" + session.getSessionId() + ",";
+				session.save(context);
+			}
+
+			SharedPreferences sharedPreferences = context.getSharedPreferences(getSPName(), Context.MODE_PRIVATE);
+			SharedPreferences.Editor editor = sharedPreferences.edit();
+			
+			editor.putInt("typeId", typeId);
+			editor.putInt("expId", expId);
+			editor.putBoolean("done", done);
+			editor.putString("title", title);
+			editor.putString("location", location);
+			editor.putFloat("lat", lat);
+			editor.putFloat("lon", lon); 
+			editor.putInt("radius", radius);
+			editor.putBoolean("probabilistic", probabilistic);
+			editor.putFloat("prob_x", prob_x);
+			editor.putString("x_label", x_label);
+			editor.putString("x_units", x_units);
+			editor.putFloat("x_max", x_max); 
+			editor.putFloat("x_min", x_min);
+			editor.putString("y_label", y_label);
+			editor.putString("y_units", y_units);
+			editor.putFloat("y_max", y_max); 
+			editor.putFloat("y_min", y_min);
+			editor.putInt("timer_status", timer_status);
+			editor.putInt("currSession", currSession);
+			editor.putInt("currLine", currLine);
+			editor.putString("sessions",sessionsString);
+			editor.putInt("currSession", currSession);
+			editor.putInt("currLine", currLine);
+			editor.putInt("progress", progress);
+			editor.putInt("numSkipped", numSkipped);
+			editor.commit();
+			
+			appendList(context, EXP_LIST);
+
+		}
+				
 	}
 	
 	/**
@@ -286,6 +327,43 @@ public class ExperimentBudgetLine extends Experiment {
 		editor.putInt("progress", progress);
 		editor.commit();
 	
+	}
+	
+	@Override
+	public void deleteSharedPreferences(Context context) {
+
+		//delete child SharedPreferences
+		for (Session session : this.sessions){
+			session.deleteSharedPreferences(context);
+		}
+		
+		//delete SharedPreferences
+		Log.d(TAG,"File to be deleted: " + "/data/data/" + context.getPackageName() + "/shared_prefs/" + this.getSPName() + ".xml");
+		if (new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + this.getSPName() + ".xml").delete()) {
+			Log.d(TAG,"File apparently deleted");
+		} else {
+			Log.d(TAG,"File apparently did not delete");
+		}
+		
+		//remove from SharedPrefrences list of SharedPreferences
+		SharedPreferences sharedPreferencesList = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE);
+		SharedPreferences.Editor listEditor = sharedPreferencesList.edit();
+
+		String[] halfList = sharedPreferencesList.getString("SharedPreferences","").split(this.getSPName() + ",");
+		
+		if (halfList.length == 0) {
+			Log.d(TAG,"Empty EXP_LIST");
+			listEditor.putString("SharedPreferences", "");			
+		} else if (halfList.length == 1) {
+			Log.d(TAG,"EXP_LIST is " + halfList[0]);
+			listEditor.putString("SharedPreferences", halfList[0]);						
+		} else {
+			Log.d(TAG,"EXP_LIST is " + halfList[0] + halfList[1]);
+			listEditor.putString("SharedPreferences", halfList[0] + halfList[1]);
+		}
+		
+		listEditor.commit();
+
 	}
 	
 }

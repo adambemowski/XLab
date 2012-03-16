@@ -21,7 +21,7 @@ public abstract class XLabSuperObject {
 	 * persistently saves response information for future upload
 	 * @param context application context
 	 */
-	public abstract void save(Context context);
+	protected abstract void save(Context context);
 
 	/** return name of shared Preference */	
 	public abstract String getSPName();
@@ -58,6 +58,7 @@ public abstract class XLabSuperObject {
 	 * @param listName name of SharedPreferences that lists other SharedPrefernces of a given type
 	 */
 	protected void appendList(Context context, String listName) {
+		Log.d(TAG, "Appending " + listName);
 		SharedPreferences sharedPreferencesList = context.getSharedPreferences(listName, Context.MODE_PRIVATE);
 		SharedPreferences.Editor listEditor = sharedPreferencesList.edit();
 		

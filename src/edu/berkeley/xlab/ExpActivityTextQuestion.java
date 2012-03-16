@@ -40,7 +40,7 @@ public class ExpActivityTextQuestion extends ExpActivitySuperclass implements On
 		
 		exp = new ExperimentTextQuestion(context, context.getSharedPreferences(Experiment.makeSPName(extras.getInt("expId")), Context.MODE_PRIVATE));
 
-		setContentView(R.layout.binary_question);
+		setContentView(R.layout.text_question);
 		
 		this.question = exp.getTitle();
 		
@@ -89,7 +89,7 @@ public class ExpActivityTextQuestion extends ExpActivitySuperclass implements On
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
 							
-							exp.makeDone();
+							exp.makeDone(context);
 							
 							new ResponseTQ(context, expId, answer);	
 							cleanUpExp(exp);

@@ -13,7 +13,6 @@ import android.util.Log;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
-
 /**
  * Draw is an activity that controls choosing a point on a line and recording
  * that choice.
@@ -21,12 +20,15 @@ import android.view.MenuItem;
  * @author Daniel Vizzini
  */
 public abstract class ExpActivitySuperclass extends Activity {
-	
+
 	/** TAG is an identifier for the log. */
 	public static final String TAG = "XLab - ExpActivitySuperclass";
 	
 	/** decimal FORMATTER */
-	public static final DecimalFormat FORMATTER = new DecimalFormat("###,###,###.00");
+	public static final DecimalFormat FORMATTER = new DecimalFormat("###,###,##0.00");
+
+	/** day FORMATTER */
+	public static final DecimalFormat DAY_FORMATTER = new DecimalFormat("#");
 
 	/** application context for Shared Preferences */
 	protected Context context;
@@ -55,7 +57,7 @@ public abstract class ExpActivitySuperclass extends Activity {
 
 	/**
 	 * Displays message at the conclusion of session (e.g. to inform the subject what has been won) and cleans the Result's shared preferences from the phone
-	 * @param activity current activity
+	 * @param exp Experiment object associated with this activity
 	 * @param dialogMessage message for dialog box
 	 */
 	protected void cleanUpExp(final Experiment exp, String dialogMessage) {		
@@ -73,17 +75,15 @@ public abstract class ExpActivitySuperclass extends Activity {
 		
 	}
 	
-
-	
 	/**
 	 * Cleans the Result's SharedPreferences from the phone
-	 * @param activity current activity	 
+	 * @param exp Experiment object associated with this activity
 	 */
 	protected void cleanUpExp(Experiment exp) {		
 		
 		if (exp.isDone()) {
 			Log.d(TAG, "Calling Refresh experiments with hit order");
-			new RefreshExperiments(context, activity, false, expId).execute();
+			new RefreshExperiments(context, activity, false, exp).execute();
 		} else {
 			Log.d(TAG, "Calling Refresh experiments without hit order");
 			new RefreshExperiments(context, activity, false).execute();			

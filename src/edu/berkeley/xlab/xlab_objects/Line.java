@@ -33,7 +33,7 @@ public class Line {
 		
 	public Line (Context context, JSONObject json) throws JSONException {
 		
-		this.expId = json.getInt("expId");
+		this.expId = json.getInt("id");
 		this.sessionId = json.getInt("sessionId");
 		this.lineId = json.getInt("lineId");
 		this.x_int = (float) json.getDouble("x_int");

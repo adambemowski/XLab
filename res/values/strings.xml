@@ -6,7 +6,7 @@
     <string name="menu_refresh">Refresh Experiments</string>
     <string name="menu_turnoff">Turn GPS Off</string>
     <string name="menu_turnon">Turn GPS On</string>
-    <string name="menu_debugBL">Debug BL</string>
+    <string name="menu_deleteSPs">Delete Experiments</string>
     <string name="menu_debugTQ">Debug TQ</string>
     
 </resources>

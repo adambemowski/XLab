@@ -1,9 +1,8 @@
 package edu.berkeley.xlab;
 
-import android.app.AlarmManager;
+import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Notification;
-import android.app.PendingIntent;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -11,8 +10,6 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
-import android.text.format.Time;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -21,25 +18,34 @@ import android.view.View.OnTouchListener;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import edu.berkeley.xlab.constants.Configuration;
+import edu.berkeley.xlab.constants.Constants;
+import edu.berkeley.xlab.xlab_objects.Experiment;
 import edu.berkeley.xlab.xlab_objects.ResponseBL;
+import edu.berkeley.xlab.timers.TimerDynamic;
+import edu.berkeley.xlab.timers.TimerStatic;
+import edu.berkeley.xlab.timers.TimerSuperClass;
 import edu.berkeley.xlab.util.Utils;
 import edu.berkeley.xlab.xlab_objects.*;
 
 /**
- * Draw is an activity that controls choosing a point on a line and recording
+ * An activity that controls choosing a point on a line and recording
  * that choice.
  * 
  * @author John Gunnison and Daniel Vizzini
  */
-public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
-		SeekBar.OnSeekBarChangeListener, OnClickListener, OnTouchListener {
+public class ExpActivityBudgetLine extends ExpActivitySuperclass implements SeekBar.OnSeekBarChangeListener, OnClickListener, OnTouchListener {
 
 	/** TAG is an identifier for the log. */
 	public static final String TAG = "XLab-BL";
 
+	/** The SharedPreferences associated with exp */
+	private SharedPreferences sharedPreferences;
+
 	/** exp is the ExperimentBudgetLine. */
 	private ExperimentBudgetLine exp;
+
+	/** Timer is the TimerSuperClass object associated with the Experiment. */
+	private TimerSuperClass timer;
 
 	/** probabilistic is true if the experiment is probabilistic, false otherwise */
 	private boolean probabilistic;
@@ -47,11 +53,8 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 	/** progress is the current value of the slider. */
 	private static int progress;
 
-	/** xValue is the displayed value of the x coordinate of the dot. */
-	private TextView xValue;
-
-	/** yValue is the displayed value of the y coordinate of the dot. */
-	private TextView yValue;
+	/** explanation is the displayed value of the explanation of what will happen if the line is selected. */
+	private TextView explanation;
 
 	/** layout is the custom view created to hold the graph. */
 	private View layout;
@@ -77,8 +80,14 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 	/** axis chosen in probabilistic experiment */
 	private char winner;
 	
+	/** true if line is state should be saved in onStop, false otherwise, false otherwise */
+	private boolean saveStateBoolean;
+	
 	/** true if line is selected in session to be the one from which subject wins goods, false otherwise */
 	private boolean line_chosen_boolean;
+	
+	/** this activity to pass to methods in other objects */
+	Activity activity;
 	
 	private boolean holdThreadRunning = false;
 	private boolean cancelHoldThread = false;
@@ -90,11 +99,15 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 		
 		super.onStart();
 		
+		this.activity = this;
+		
 		//call superclass method
 		initialize(this);
 		
 		Intent intent = this.getIntent();
 		Bundle extras = intent.getExtras();
+		
+		sharedPreferences = context.getSharedPreferences(Experiment.makeSPName(extras.getInt("expId")), Context.MODE_PRIVATE);
 		
 		holdThreadRunning = false;
 		cancelHoldThread = false;
@@ -115,22 +128,91 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 
 		seekBar = (SeekBar) findViewById(R.id.slider);
 		seekBar.setOnSeekBarChangeListener(this);
-		xValue = (TextView) findViewById(R.id.x_value);
-		yValue = (TextView) findViewById(R.id.y_value);
+		explanation = (TextView) findViewById(R.id.explanation);
 
-		exp = new ExperimentBudgetLine(context, context.getSharedPreferences(Experiment.makeSPName(extras.getInt("expId")), Context.MODE_PRIVATE));
+		exp = new ExperimentBudgetLine(context, sharedPreferences);
+
+		Log.d(TAG,"exp.isDone(): "+ exp.isDone());
+		
+		//in case experiment has timed out
+		if (exp.isDone()) {
+			makeMessageAndClean((currentSession - 1) % exp.getSessions().length, true);									
+		} else if (exp.getTimer_status() != Constants.TIMER_STATUS_NONE) {
+			Log.d(TAG,"exp.getTimer_type() " + exp.getTimer_type() );
+			switch(exp.getTimer_type()) {
+			case Constants.TIMER_STATIC:
+				
+				TimerStatic timerStatic;
+				
+				Log.d(TAG,"About to instantiate TimerStatic for " + exp.getExpId());
+				timer = new TimerStatic(context, exp, sharedPreferences, false);
+				timerStatic = ((TimerStatic) timer);
+				
+				//update timer if restrictive
+				if (exp.getTimer_status() == Constants.TIMER_STATUS_RESTRICTIVE) {
+					exp = timerStatic.getExpBL();					
+				}
+				
+				//check if done now
+				if (exp.isDone()) {
+					makeMessageAndClean((currentSession - 1) % exp.getSessions().length, true);						
+				} else {
+					
+					int numSkipped = exp.getNumSkipped();
+					Log.d(TAG, "numSkipped: " + numSkipped);
+					
+					//inform of skipped lines
+					if(numSkipped > 0 && exp.getTimer_status() == Constants.TIMER_STATUS_RESTRICTIVE) {
+						
+						String message;
+						AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+						
+						if (numSkipped == 1) {
+							message = "You did not respond to 1 prompt. If the line associated with this prompt is chosen for your rewared, you will receive nothing.";
+						} else {
+							message = "You did not respond to " + numSkipped + " prompts. If any of the lines associated with these prompts are chosen for your rewared, you will receive nothing.";
+						}
+						builder.setMessage(message);
+						builder.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int id) {
+								exp.resetNumSkipped(context);
+								initialize();
+							}
+						});
+					
+						AlertDialog alert = builder.create();
+						alert.show();
+		
+					} else {
+						initialize();						
+					}
+					
+				}
+				break;
+			case Constants.TIMER_DYNAMIC:
+				Log.d(TAG,"About to instantiate TimerDynamic for " + exp.getExpId());
+				timer = new TimerDynamic(context, activity, exp, sharedPreferences);
+				initialize();
+				break;
+			}
+		} else {
+			initialize();
+		}
+	}
+	
+	private void initialize() {
 		probabilistic = exp.getProbabilistic();
 		Log.d(TAG, "probabilistic = " + probabilistic);
 		
-
 		TextView title = (TextView) findViewById(R.id.title);
 
 		title.setText(exp.getTitle());
 		DrawView.setLabels(exp.getX_label(), exp.getY_label(),
 				exp.getX_units(), exp.getY_units());
 
+		saveStateBoolean = true;
 		currentSession = exp.getCurrSession();
-		currentLine = exp.getCurrLine();			
+		currentLine = exp.getCurrLine();
 
 		displayNewLine();
 	
@@ -139,17 +221,16 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 			changeProgress(exp.getProgress());
 			seekBar.setProgress(exp.getProgress());
 		}
-
 	}
-
+	
 	@Override
 	public void onStop() {
 		
 		super.onStop();
 		Log.d(TAG,"In onStop, progress = " + progress);
-
-		if (!exp.isDone()) {
-			exp.saveState(context, progress);			
+		Log.d(TAG,"exp.isDone() = " + exp.isDone());
+		if (saveStateBoolean && !exp.isDone()) {
+			exp.saveState(context, progress);
 		}
 			
 	}
@@ -165,8 +246,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 		progress = progressInput;
 		DrawView.setDotValue((int) (progress * x / exp.getX_max() * 4));
 		layout.invalidate();
-		xValue.setText(getXLabel());
-		yValue.setText(getYLabel());		
+		explanation.setText(getExplanation());
 	}
 
 	@Override
@@ -187,7 +267,10 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 			
 			Log.d(TAG,"currentSession: " + currentSession);
 			winner = (probabilistic ? exp.getSession(currentSession).getLine(currentLine).getWinner() : '-');
-			line_chosen_boolean = (exp.getSession(currentSession).getLine_chosen() == currentLine);
+			Log.d(TAG, "exp.getSession(currentSession).getLine_chosen(): " + exp.getSession(currentSession).getLine_chosen());
+			Log.d(TAG, "currentLine: " + currentLine);
+			this.line_chosen_boolean = (exp.getSession(currentSession).getLine_chosen() == currentLine);
+			Log.d(TAG, "line_chosen_boolean: " + this.line_chosen_boolean);
 			
 			String confirmationMessage = "You have chosen " 
 					+ FORMATTER.format(getX()) + " " + exp.getX_units()
@@ -207,109 +290,37 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 							
 						new ResponseBL(context, expId, currentSession, currentLine, x, y, getX(), getY(), winner, line_chosen_boolean);
 	
-						//very important line
+						//very important line of code
 						exp.nextLine(context);
 						currentSession = exp.getCurrSession();
 						currentLine = exp.getCurrLine();
 						
 						if (currentLine == 0) {
-							int lineChosen = exp.getSession(currentSession - 1).getLine_chosen();
-							
-							//Winning line chosen for message that informs subjects of their rewards
-							SharedPreferences sharedPreferences = context.getSharedPreferences(ResponseBL.getSPName(Configuration.XLAB_BL_EXP, expId, currentSession - 1, lineChosen), Context.MODE_PRIVATE);
-							Log.d(TAG, "SharedPreferences name: " + ResponseBL.getSPName(Configuration.XLAB_BL_EXP, expId, currentSession - 1, lineChosen));
-							Log.d(TAG, "SharedPreferences x_int: " + context.getSharedPreferences(ResponseBL.getSPName(Configuration.XLAB_BL_EXP, expId, currentSession - 1, lineChosen), Context.MODE_PRIVATE).getFloat("x_int",(float)-99));
-							String message = "Thank you for completing a session.\n\n"
-									+ "The " + (lineChosen + 1) + Utils.getOrdinalFor(lineChosen + 1) + " ";
-							
-							if (probabilistic) {
-								
-								message = message
-										+ "line and "
-										+ winner
-										+ "-axis was chosen.\n\nYou have won "
-										+ ((winner == 'X') ? 
-												(FORMATTER.format((double)sharedPreferences.getFloat("x_chosen", 0)) + " " + exp.getX_units() + (!exp.getX_label().equalsIgnoreCase("") ? " of "  + exp.getX_label(): "on the x-axis")) : 
-													(FORMATTER.format((double)sharedPreferences.getFloat("y_chosen", 0)) + " " + exp.getY_units() + (!exp.getX_label().equalsIgnoreCase("") ? " of " + exp.getY_label() : "on the y-axis")))
-													+ ".";
-								
-							} else {
-								
-								message = message + "line was chosen.\n\nYou have won "
-										+ FORMATTER.format((double)sharedPreferences.getFloat("x_chosen", 0)) + " " + exp.getX_units()
-										+ " of " + exp.getX_label() + " and "
-										+ FORMATTER.format((double)sharedPreferences.getFloat("y_chosen", 0)) + " " + exp.getY_units()
-										+ " of " + exp.getY_label() + ".";
-								
-							}
-
-							cleanUpExp(exp, message);
-
+							makeMessageAndClean((currentSession - 1) % exp.getSessions().length, false);
 						} else { 
-						    switch (exp.getTimerStatusLine()) {
-						    case 0:  
+						    switch (exp.getTimer_status()) {
+						    case Constants.TIMER_STATUS_NONE:  
 						        displayNewLine();
 						        break;
-						    case 1:
-						        Time nextTime = exp.nextTime(System.currentTimeMillis());
-						        String displayMessage = "You will recieve a notification to pick another point at " + nextTime.hour + ":" + nextTime.minute + ".";
+						    case Constants.TIMER_STATUS_REMINDER:
+						    	timer.onFinish();
+						        displayNewLine();
+						        break;
+						    case Constants.TIMER_STATUS_RESTRICTIVE:
+						    	timer.onFinish();
 						        AlertDialog.Builder timeBuilder = new AlertDialog.Builder(ExpActivityBudgetLine.this);
-						        timeBuilder.setMessage(displayMessage);
+						        
+						        timeBuilder.setMessage(timer.getClosingMessage());
 
-						        timeBuilder.setNegativeButton("Cancel", null);
-
-						        timeBuilder.setPositiveButton("Confirm",
+						        timeBuilder.setPositiveButton("OK",
 						                        new DialogInterface.OnClickListener() {
 						            public void onClick(DialogInterface dialog, int which) {finish();}});
 						        AlertDialog timeAlert = timeBuilder.create();
-						        timeAlert.show();
-
-						        /*int icon = R.drawable.ic_stat_x_notification;
-						        CharSequence tickerText = "X-Lab Alert";
-						        long when = System.currentTimeMillis();
-
-						        Log.d(TAG,"Running UploadXlab");
-						        Notification notification = new Notification(icon, tickerText, when);
-						        notification.flags = Notification.FLAG_AUTO_CANCEL;
-						        notification.defaults |= Notification.DEFAULT_SOUND;
-						        notification.defaults |= Notification.DEFAULT_VIBRATE;
-						        notification.defaults |= Notification.DEFAULT_LIGHTS;
-
-						        CharSequence contentTitle = "X-Lab Alert";
-						        CharSequence contentText = exp.getTitle();
-						        Intent notificationIntent = new Intent(context, exp.getActivity());
-						        notificationIntent.putExtra("expId", exp.getExpId());
-						        PendingIntent contentIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
-						        notification.setLatestEventInfo(context, contentTitle, contentText, contentIntent);
-
-						        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-						        Intent alarm = new Intent(ExpActivityBudgetLine.this, AlarmReciever.class);
-						        alarm.putExtra("notification", notification);
-						        alarm.putExtra("expId", exp.getExpId());
-						        PendingIntent pendingIntent = PendingIntent.getBroadcast(ExpActivityBudgetLine.this, 0,
-						                        alarm, PendingIntent.FLAG_ONE_SHOT);
-						        am.set(AlarmManager.RTC_WAKEUP,nextTime.toMillis(false)
-						                        , pendingIntent);*/
-						        
-						        break;
-						    case 2:
-						        Time nextTime2 = exp.nextTime(System.currentTimeMillis());
-                                String displayMessage2 = "You will recieve a notification to pick another point at " + nextTime2.hour + ":" + nextTime2.minute + ".";
-                                AlertDialog.Builder timeBuilder2 = new AlertDialog.Builder(ExpActivityBudgetLine.this);
-                                timeBuilder2.setMessage(displayMessage2);
-
-                                timeBuilder2.setNegativeButton("Cancel", null);
-
-                                timeBuilder2.setPositiveButton("Confirm",
-                                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {finish();}});
-                                AlertDialog timeAlert2 = timeBuilder2.create();
-                                timeAlert2.show();
-						        break;
+						        timeAlert.show();					        	
+						    		
 						    }
 
 						}
-
 					}
 				}
 			);
@@ -378,8 +389,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 	                                    DrawView.addToX(-1);
 	                                    progress -= 1;
 	                                    seekBar.setProgress(progress);
-	                                    xValue.setText(getXLabel());
-	                                    yValue.setText(getYLabel());
+	                                    explanation.setText(getExplanation());
 	                                }
 	                                break;
 	                            case R.id.right_button:
@@ -387,8 +397,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 	                                    DrawView.addToX(1);
 	                                    progress += 1;
 	                                    seekBar.setProgress(progress);
-	                                    xValue.setText(getXLabel());
-	                                    yValue.setText(getYLabel());
+	                                    explanation.setText(getExplanation());
 	                                }
 	                                break;
 	                            }
@@ -433,8 +442,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 				DrawView.addToX(-1);
 				progress -= 1;
 				seekBar.setProgress(progress);
-				xValue.setText(getXLabel());
-				yValue.setText(getYLabel());
+                explanation.setText(getExplanation());
 			}
 			break;
 		case R.id.right_button:
@@ -442,8 +450,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 				DrawView.addToX(1);
 				progress += 1;
 				seekBar.setProgress(progress);
-				xValue.setText(getXLabel());
-				yValue.setText(getYLabel());
+                explanation.setText(getExplanation());
 			}
 			break;
 		}
@@ -451,27 +458,32 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 	}
 	
 	/**
-	 * Converts current SeekBar progress value to X-axis label
+	 * Returns string that clarifies what will be awarded if the line is chosen
 	 * 
 	 * @param currProgress
 	 *            Current progress value of SeekBar
-	 * @return message The message to be displayed under the X axis
+	 * @return message The message to be displayed under the graph
 	 */
-	private String getXLabel() {
-		return ("X = " + FORMATTER.format((float) progress * x
-				/ (float) seekBar.getMax()));
-	}
-
-	/**
-	 * Converts current SeekBar progress value to X-axis label
-	 * 
-	 * @param currProgress
-	 *            Current progress value of SeekBar
-	 * @return message The message to be displayed under the X axis
-	 */
-	private String getYLabel() {
-		return ("Y = " + FORMATTER.format(-slope
-				* ((float) progress * x / (float) seekBar.getMax()) + y));
+	private String getExplanation() {
+		
+		String xFormatted = FORMATTER.format((float) progress * x / (float) seekBar.getMax());
+		String yFormatted = FORMATTER.format(-slope * ((float) progress * x / (float) seekBar.getMax()) + y);
+		String message;
+		
+		if (probabilistic) {
+			
+			//TODO: Hardcoded for dollars now. Make monetary units on server-side.
+			message = "If this line is chosen, you will get $" + xFormatted + " if the x-axis is chosen and " 
+					+ "$" + yFormatted + " if the y-axis is chosen.";
+			
+		} else {
+			
+			message = "If this line is chosen, you will get " + xFormatted + " " + exp.getX_units() + " of " + exp.getX_label() + " and " 
+					+ yFormatted + " " + exp.getY_units() + " of " + exp.getY_label() + ".";
+			
+		}
+		
+		return message;
 	}
 
 	/**
@@ -518,10 +530,66 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements
 		progress = 50;
 		DrawView.loadLineValues(intercepts[0], intercepts[1]);
 		DrawView.setDotValue((int) Math.round(intercepts[0] / 2));
-		xValue.setText(getXLabel());
-		yValue.setText(getYLabel());
+        explanation.setText(getExplanation());
 		System.out.println("progress: " + progress);
 		layout.invalidate();
+	}
+	
+	/**
+	 * Finish up session
+	 * @param timedOut true if called because activity has been started after time out, false otherwise
+	 */
+	private void makeMessageAndClean(int session, boolean timedOut) {
+		
+		int lineChosen = exp.getSession(session).getLine_chosen();
+		
+		//cancel status bar notification
+		((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(exp.getExpId());
+		
+		//make it so progress is not saved
+		saveStateBoolean = false;
+		
+		//Winning line chosen for message that informs subjects of their rewards
+		SharedPreferences winningSharedPreferences = context.getSharedPreferences(ResponseBL.getSPName(Constants.XLAB_BL_EXP, expId, currentSession - 1, lineChosen), Context.MODE_PRIVATE);
+		Log.d(TAG, "SharedPreferences name: " + ResponseBL.getSPName(Constants.XLAB_BL_EXP, expId, currentSession - 1, lineChosen));
+		Log.d(TAG, "SharedPreferences x_int: " + winningSharedPreferences.getFloat("x_int",(float)-99));
+		
+		
+		String message = ((timedOut) ? "Your session has timed out." : "Thank you for completing a session.") + "\n\n"
+				+ "The " + Utils.getOrdinalFor(lineChosen + 1) + " ";
+		
+		
+		if (winningSharedPreferences.getFloat("x_chosen", -1) == -1) {
+			
+			message = message + "line was chosen. Unfortunately, you did not respond to the prompt for this line in a timely manner. You will receive nothing.";
+			
+		} else {
+
+			if (probabilistic) {
+				
+				message = message
+						+ "line and "
+						+ winner
+						+ "-axis was chosen.\n\nYou have won "
+						+ ((winner == 'X' || winner == 'x') ? 
+								(FORMATTER.format((double)winningSharedPreferences.getFloat("x_chosen", -1)) + " " + exp.getX_units() + (!exp.getX_label().equalsIgnoreCase("") ? " of "  + exp.getX_label(): " on the x-axis")) : 
+									(FORMATTER.format((double)winningSharedPreferences.getFloat("y_chosen", -1)) + " " + exp.getY_units() + (!exp.getX_label().equalsIgnoreCase("") ? " of " + exp.getY_label() : " on the y-axis")))
+									+ ".";
+				
+			} else {
+				
+				message = message + "line was chosen.\n\nYou have won "
+						+ FORMATTER.format((double)winningSharedPreferences.getFloat("x_chosen", -1)) + " " + exp.getX_units()
+						+ " of " + exp.getX_label() + " and "
+						+ FORMATTER.format((double)winningSharedPreferences.getFloat("y_chosen", -1)) + " " + exp.getY_units()
+						+ " of " + exp.getY_label() + ".";
+				
+			}
+			
+		}
+		
+		cleanUpExp(exp, message);
+
 	}
 	
 }
