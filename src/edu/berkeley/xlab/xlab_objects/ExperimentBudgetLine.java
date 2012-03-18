@@ -151,8 +151,8 @@ public class ExperimentBudgetLine extends Experiment {
 				for (int j = 0; j < numLines; j++) {
 					
 					winner = (r.nextFloat() < prob_x) ? 'x' : 'y';
-					x_int = r.nextFloat() * (x_max - x_min);
-					y_int = r.nextFloat() * (y_max - y_min);
+					x_int = x_min + r.nextFloat() * (x_max - x_min);
+					y_int = y_min + r.nextFloat() * (y_max - y_min);
 					
 					lines[j] = new Line(context, expId, i, j, x_int, y_int, winner);
 
@@ -210,6 +210,12 @@ public class ExperimentBudgetLine extends Experiment {
 		this.currLine = sharedPreferences.getInt("currLine", -1);
 		this.progress = sharedPreferences.getInt("progress", -1);
 		this.numSkipped = sharedPreferences.getInt("numSkipped", -1);
+		
+		Log.d(TAG,"The x min value is  " + x_min);
+		Log.d(TAG,"The x max value is  " + x_max);
+		Log.d(TAG,"The y min value is  " + y_min);
+		Log.d(TAG,"The y max value is  " + y_max);
+		
 		
 		if (this.timer_status != Constants.TIMER_STATUS_NONE) {
 			this.timer_type = sharedPreferences.getInt("timer_type", -1);
