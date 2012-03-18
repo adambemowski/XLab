@@ -11,6 +11,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -82,6 +83,9 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 	
 	/** true if line is state should be saved in onStop, false otherwise, false otherwise */
 	private boolean saveStateBoolean;
+	
+	/** true if line is confirmed done. */
+	private boolean lineDone;
 	
 	/** true if line is selected in session to be the one from which subject wins goods, false otherwise */
 	private boolean line_chosen_boolean;
@@ -211,6 +215,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 				exp.getX_units(), exp.getY_units());
 
 		saveStateBoolean = true;
+		lineDone = false;
 		currentSession = exp.getCurrSession();
 		currentLine = exp.getCurrLine();
 
@@ -229,7 +234,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 		super.onStop();
 		Log.d(TAG,"In onStop, progress = " + progress);
 		Log.d(TAG,"exp.isDone() = " + exp.isDone());
-		if (saveStateBoolean && !exp.isDone()) {
+		if (saveStateBoolean && !exp.isDone() && !lineDone) {
 			exp.saveState(context, progress);
 		}
 			
@@ -295,6 +300,8 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 						currentSession = exp.getCurrSession();
 						currentLine = exp.getCurrLine();
 						
+
+						
 						if (currentLine == 0) {
 							makeMessageAndClean((currentSession - 1) % exp.getSessions().length, false);
 						} else { 
@@ -311,12 +318,28 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 						        AlertDialog.Builder timeBuilder = new AlertDialog.Builder(ExpActivityBudgetLine.this);
 						        
 						        timeBuilder.setMessage(timer.getClosingMessage());
+						        
+						        timeBuilder.setCancelable(false);
+						        
+						        timeBuilder.setOnKeyListener(new DialogInterface.OnKeyListener() {
 
+						                @Override
+						                public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+						                    if (keyCode == KeyEvent.KEYCODE_SEARCH && event.getRepeatCount() == 0) {
+						                        return true;
+						                    }
+						                    return false;
+						                }
+						        });
+						        
 						        timeBuilder.setPositiveButton("OK",
 						                        new DialogInterface.OnClickListener() {
 						            public void onClick(DialogInterface dialog, int which) {finish();}});
-						        AlertDialog timeAlert = timeBuilder.create();
-						        timeAlert.show();					        	
+						        AlertDialog timeAlert =  timeBuilder.create();
+						        timeAlert.show();	
+						        
+						        exp.saveState(context, -1);
+						        lineDone = true;
 						    		
 						    }
 
@@ -330,6 +353,25 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 			
 		}
 	}
+	
+	public class CustomAlert extends AlertDialog {
+	    
+	    protected CustomAlert(Context context) {
+            super(context);
+        }
+
+        @Override
+	    public boolean onSearchRequested() {
+	        return false;
+	    }
+	}
+	
+	
+	@Override
+	public boolean onSearchRequested() {
+	    return false;
+	}
+
 
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
@@ -508,6 +550,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 	 */
 	public static float getY() {
 		return (-slope * ((float) progress * x / (float) seekBar.getMax()) + y);
+		
 	}
 
 	/**
@@ -524,14 +567,12 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 				.getY_int();
 		intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max() * 4);
 		intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);
-		slope = intercepts[1] / intercepts[0];
-		System.out.println("x intercept: " + intercepts[0]);
+		slope = y / x;
 		seekBar.setProgress(50);
 		progress = 50;
 		DrawView.loadLineValues(intercepts[0], intercepts[1]);
 		DrawView.setDotValue((int) Math.round(intercepts[0] / 2));
         explanation.setText(getExplanation());
-		System.out.println("progress: " + progress);
 		layout.invalidate();
 	}
 	

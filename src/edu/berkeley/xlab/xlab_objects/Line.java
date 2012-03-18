@@ -7,6 +7,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 public class Line {
 	
@@ -50,6 +51,9 @@ public class Line {
 		this.x_int = sharedPreferences.getFloat("x_int",(float) -1);
 		this.y_int = sharedPreferences.getFloat("y_int", (float) -1);
 		this.winner = sharedPreferences.getString("winner", "").charAt(0);//for risk-reward studies
+		
+		Log.d("Line Debug", "x_int is " + x_int);
+		Log.d("Line Debug", "y_int is " + y_int);
 		
 	}
 	
