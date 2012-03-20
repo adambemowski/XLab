@@ -120,14 +120,17 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 	
 	/** 
 	 * @param context Application Context
-	 * @param activity Calling Activity
 	 * @param downloadFlag true if task also downloads experiments, false otherwise
-	 * @param showMessages True if interacts with UI, false otherwise 
 	 */
 	public RefreshExperiments(Context context, boolean downloadFlag) {
 		initialize(context, downloadFlag,  false);
 	}
 	
+	/** 
+	 * @param context Application Context
+	 * @param downloadFlag true if task also downloads experiments, false otherwise
+	 * @param showMessages True if interacts with UI, false otherwise 
+	 */
 	private void initialize(Context context, boolean downloadFlag, boolean showMessages) {
 		this.context = context;
 		this.downloadFlag = downloadFlag;
@@ -135,6 +138,12 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 		this.toBeRemovedBool = false;
 	}
 
+	/** 
+	 * @param context Application Context
+	 * @param activity Calling Activity
+	 * @param downloadFlag true if task also downloads experiments, false otherwise
+	 * @param showMessages True if interacts with UI, false otherwise 
+	 */
 	private void initialize(Context context, boolean downloadFlag, Experiment toBeRemoved, boolean showMessages) {
 		this.context = context;
 		this.downloadFlag = downloadFlag;
@@ -155,7 +164,6 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 		}
 		
 		this.username = Utils.getStringPreference(context, Constants.USERNAME, "anonymous");
-		//this.xLabExps = appState.getXLabExps();
 		
 		successful = true;
 		downloaded = 0;
@@ -414,7 +422,8 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 	private void fetchXLabExps() {
 		
 		Log.d(TAG, "outstanding: " + outstanding);
-						
+		Log.d(TAG, "Constants.XLAB_API_ENDPOINTS.length: " + Constants.XLAB_API_ENDPOINTS.length);
+		
 		//fetch experiments from server		
 		for (int i = 0; i < Constants.XLAB_API_ENDPOINTS.length; i++)  {
 			Log.d(TAG, Constants.XLAB_API_ENDPOINTS[i]);
@@ -475,12 +484,42 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 								break;
 								
 							case Constants.XLAB_BL_EXP:
-								if (!Utils.checkIfSaved(context, Experiment.makeSPName(json.getInt("id")), Experiment.EXP_LIST)) {
+								ExperimentBudgetLine bl;
+								if (Utils.checkIfSaved(context, Experiment.makeSPName(json.getInt("id")), Experiment.EXP_LIST)) {
+									Log.d(TAG, "About to create bl object from JSON from SP");
+									SharedPreferences sharedPreferences = context.getSharedPreferences(Experiment.makeSPName(json.getInt("id")),Context.MODE_PRIVATE);
+									bl = new ExperimentBudgetLine (context, sharedPreferences);
+									
+									//construct timer if necessary
+									Log.d(TAG,"bl.getTimer_status(): " + bl.getTimer_status());
+									switch(bl.getTimer_status()) {
+									case Constants.TIMER_STATUS_REMINDER:
+									case Constants.TIMER_STATUS_RESTRICTIVE:
+										
+										switch(bl.getTimer_type()) {
+										
+										case Constants.TIMER_STATIC:
+		
+											new TimerStatic(context, bl, sharedPreferences, true);
+											break;
+											
+										case Constants.TIMER_DYNAMIC:
+											new TimerDynamic(context, activity, bl, sharedPreferences);
+											break;
+											
+										}
+										
+										break;
+										
+									}
+									
+								} else {
+									
 									Log.d(TAG, "About to create bl object");
-									ExperimentBudgetLine bl = new ExperimentBudgetLine (context, json);
+									bl = new ExperimentBudgetLine (context, json);
 									downloaded++;
 									Log.d(TAG, "downloaded: " + downloaded);
-									
+
 									//construct timer if necessary
 									Log.d(TAG,"bl.getTimer_status(): " + bl.getTimer_status());
 									switch(bl.getTimer_status()) {
@@ -488,24 +527,22 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 									case Constants.TIMER_STATUS_RESTRICTIVE:
 										JSONObject timerJson = json.getJSONObject("timer");
 										boolean[] dayEligibility = {timerJson.getBoolean("boolSunday"),timerJson.getBoolean("boolMonday"),timerJson.getBoolean("boolTuesday"),timerJson.getBoolean("boolWednesday"),timerJson.getBoolean("boolThursday"),timerJson.getBoolean("boolFriday"),timerJson.getBoolean("boolSaturday")};
-										switch(timerJson.getInt("timer_type")) {
+										switch(bl.getTimer_type()) {
 										case Constants.TIMER_STATIC:
 
 											JSONObject startDateJson = timerJson.getJSONObject("startDate");
 											JSONObject endDateJson = timerJson.getJSONObject("endDate");
-											
+
 											new TimerStatic(context, bl, dayEligibility, new GregorianCalendar(startDateJson.getInt("year"),startDateJson.getInt("month") - 1,startDateJson.getInt("date")),  new GregorianCalendar(endDateJson.getInt("year"),endDateJson.getInt("month") - 1,endDateJson.getInt("date")), timerJson.getInt("startTime"), timerJson.getInt("endTime"));
 											break;
 										case Constants.TIMER_DYNAMIC:
 											new TimerDynamic(context, bl, dayEligibility, timerJson.getInt("min_interval"), timerJson.getInt("max_interval"));
 											break;
 										}
-										
-									}
 
+									}	
+									
 								}
-								
-								break;
 								
 							}
 							
@@ -527,6 +564,6 @@ public class RefreshExperiments extends AsyncTask<Void, Void, Void> {
 			}
 
 		}
-
+		
 	}
 }

@@ -21,10 +21,8 @@ public class AlarmReceiver extends BroadcastReceiver {
 		try {
 			Log.d(TAG,"String.valueOf(intent.getExtras().getInt(\"expID\"): " + String.valueOf(intent.getExtras().getInt("expId")));
 			new Notifier(context, (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE), new ExperimentBudgetLine(context, context.getSharedPreferences(Experiment.makeSPName(intent.getExtras().getInt("expId")),-1))).run();
-		} catch (Exception e) {
-			
+		} catch (Exception e) {	
 			e.printStackTrace();
-		 
 		}
 	}
 }

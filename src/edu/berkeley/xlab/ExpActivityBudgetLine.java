@@ -1,5 +1,7 @@
 package edu.berkeley.xlab;
 
+import java.util.Random;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
@@ -93,6 +95,9 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 	/** this activity to pass to methods in other objects */
 	Activity activity;
 	
+	/** the currency character ($, €, or '-', where '-' indicates a non-monetary reward) */
+	char currency;
+	
 	private boolean holdThreadRunning = false;
 	private boolean cancelHoldThread = false;
 	private Handler handler = new Handler();
@@ -135,6 +140,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 		explanation = (TextView) findViewById(R.id.explanation);
 
 		exp = new ExperimentBudgetLine(context, sharedPreferences);
+		currency = exp.getCurrency();
 
 		Log.d(TAG,"exp.isDone(): "+ exp.isDone());
 		
@@ -159,7 +165,9 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 				
 				//check if done now
 				if (exp.isDone()) {
+					
 					makeMessageAndClean((currentSession - 1) % exp.getSessions().length, true);						
+					
 				} else {
 					
 					int numSkipped = exp.getNumSkipped();
@@ -176,6 +184,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 						} else {
 							message = "You did not respond to " + numSkipped + " prompts. If any of the lines associated with these prompts are chosen for your rewared, you will receive nothing.";
 						}
+						
 						builder.setMessage(message);
 						builder.setNeutralButton("OK", new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int id) {
@@ -212,7 +221,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 
 		title.setText(exp.getTitle());
 		DrawView.setLabels(exp.getX_label(), exp.getY_label(),
-				exp.getX_units(), exp.getY_units());
+				exp.getX_units(), exp.getY_units(), exp.getCurrency());
 
 		saveStateBoolean = true;
 		lineDone = false;
@@ -271,17 +280,17 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 			Log.d(TAG,"In onClick");
 			
 			Log.d(TAG,"currentSession: " + currentSession);
-			winner = (probabilistic ? exp.getSession(currentSession).getLine(currentLine).getWinner() : '-');
+			Random r = new Random();
+			winner = (probabilistic ? (r.nextDouble() < exp.getProb_x() ? 'x' : 'y') : '-');
 			Log.d(TAG, "exp.getSession(currentSession).getLine_chosen(): " + exp.getSession(currentSession).getLine_chosen());
 			Log.d(TAG, "currentLine: " + currentLine);
 			this.line_chosen_boolean = (exp.getSession(currentSession).getLine_chosen() == currentLine);
 			Log.d(TAG, "line_chosen_boolean: " + this.line_chosen_boolean);
 			
 			String confirmationMessage = "You have chosen " 
-					+ FORMATTER.format(getX()) + " " + exp.getX_units()
-					+ (!exp.getX_label().equalsIgnoreCase("") ? " of "  + exp.getX_label(): "") + " and "
-					+ FORMATTER.format(getY()) + " " + exp.getY_units()
-					+ (!exp.getY_label().equalsIgnoreCase("") ? " of "  + exp.getY_label(): "") + ". Select Confirm to save the selection or Cancel to select another point on this line.";
+					+ _getXRewardString(getX()) + " and " 
+					+ _getYRewardString(getY())
+					+ ". Select Confirm to save the selection or Cancel to select another point on this line.";
 			
 			
 			AlertDialog.Builder confirmationBuilder = new AlertDialog.Builder(ExpActivityBudgetLine.this);
@@ -354,25 +363,6 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 		}
 	}
 	
-	public class CustomAlert extends AlertDialog {
-	    
-	    protected CustomAlert(Context context) {
-            super(context);
-        }
-
-        @Override
-	    public boolean onSearchRequested() {
-	        return false;
-	    }
-	}
-	
-	
-	@Override
-	public boolean onSearchRequested() {
-	    return false;
-	}
-
-
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		switch (event.getAction()) {
@@ -508,21 +498,12 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 	 */
 	private String getExplanation() {
 		
-		String xFormatted = FORMATTER.format((float) progress * x / (float) seekBar.getMax());
-		String yFormatted = FORMATTER.format(-slope * ((float) progress * x / (float) seekBar.getMax()) + y);
 		String message;
 		
 		if (probabilistic) {
-			
-			//TODO: Hardcoded for dollars now. Make monetary units on server-side.
-			message = "If this line is chosen, you will get $" + xFormatted + " if the x-axis is chosen and " 
-					+ "$" + yFormatted + " if the y-axis is chosen.";
-			
+			message = "If this line is chosen, you will get " + _getXRewardString((float) progress * x / (float) seekBar.getMax()) + " if the x-axis is chosen and " + _getYRewardString(-slope * ((float) progress * x / (float) seekBar.getMax()) + y) + " if the y-axis is chosen.";
 		} else {
-			
-			message = "If this line is chosen, you will get " + xFormatted + " " + exp.getX_units() + " of " + exp.getX_label() + " and " 
-					+ yFormatted + " " + exp.getY_units() + " of " + exp.getY_label() + ".";
-			
+			message = "If this line is chosen, you will get " + _getXRewardString((float) progress * x / (float) seekBar.getMax()) + " and " + _getYRewardString(-slope * ((float) progress * x / (float) seekBar.getMax()) + y) + ".";
 		}
 		
 		return message;
@@ -565,8 +546,22 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 				.getX_int();
 		y = (float) exp.getSession(currentSession).getLine(currentLine)
 				.getY_int();
+		
 		intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max() * 4);
-		intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);
+		intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);			
+
+		//TODO: this boolean is for cases where x and y max are different. Make it work with progress increments
+		/*
+		if (currency == '-') {//cannot directly compare apples and oranges
+			intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max() * 4);
+			intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);			
+		} else {//can directly compare dollars and dollars
+			double max = Math.max(exp.getX_max(),exp.getY_max());
+			intercepts[0] = (float) (x * seekBar.getMax() / max * 4);
+			intercepts[1] = (float) (y * seekBar.getMax() / max * 4);						
+		}
+		*/
+		
 		slope = y / x;
 		seekBar.setProgress(50);
 		progress = 50;
@@ -607,23 +602,20 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 		} else {
 
 			if (probabilistic) {
-				
+								
 				message = message
 						+ "line and "
 						+ winner
-						+ "-axis was chosen.\n\nYou have won "
+						+ "-axis were chosen.\n\nYou have won "
 						+ ((winner == 'X' || winner == 'x') ? 
-								(FORMATTER.format((double)winningSharedPreferences.getFloat("x_chosen", -1)) + " " + exp.getX_units() + (!exp.getX_label().equalsIgnoreCase("") ? " of "  + exp.getX_label(): " on the x-axis")) : 
-									(FORMATTER.format((double)winningSharedPreferences.getFloat("y_chosen", -1)) + " " + exp.getY_units() + (!exp.getX_label().equalsIgnoreCase("") ? " of " + exp.getY_label() : " on the y-axis")))
-									+ ".";
+								_getXRewardString(winningSharedPreferences.getFloat("x_chosen", -1)) : 
+									_getYRewardString(winningSharedPreferences.getFloat("y_chosen", -1))) + ".";
 				
 			} else {
 				
 				message = message + "line was chosen.\n\nYou have won "
-						+ FORMATTER.format((double)winningSharedPreferences.getFloat("x_chosen", -1)) + " " + exp.getX_units()
-						+ " of " + exp.getX_label() + " and "
-						+ FORMATTER.format((double)winningSharedPreferences.getFloat("y_chosen", -1)) + " " + exp.getY_units()
-						+ " of " + exp.getY_label() + ".";
+						+ _getXRewardString(winningSharedPreferences.getFloat("x_chosen", -1)) + " and "
+						+ _getYRewardString(winningSharedPreferences.getFloat("y_chosen", -1)) + ".";
 				
 			}
 			
@@ -631,6 +623,16 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 		
 		cleanUpExp(exp, message);
 
+	}
+
+	private String _getXRewardString(float x){
+		String xFormatted = FORMATTER.format(x);
+		return (currency == '-') ? (xFormatted + " " + exp.getX_units() + " of " + exp.getX_label()) : (currency + xFormatted);
+	}
+
+	private String _getYRewardString(float y){
+		String yFormatted = FORMATTER.format(y);
+		return (currency == '-') ? (yFormatted + " " + exp.getY_units() + " of " + exp.getY_label()) : (currency + yFormatted);
 	}
 	
 }

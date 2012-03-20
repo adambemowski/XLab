@@ -96,9 +96,9 @@ public class LoginActivity extends Activity implements OnClickListener {
 				params.put("key", md5(Constants.SECRET_KEY + username));
 				params.put("change_phone", "1");
 				Log.d(LOGIN_ACTIVITY_TAG, "Hashkey is " + md5(Constants.SECRET_KEY + username));
+				new Login().execute();
 			}
 			
-			new Login().execute();
 			
 		}		
 	}
