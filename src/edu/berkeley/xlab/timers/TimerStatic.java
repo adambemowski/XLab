@@ -104,20 +104,7 @@ public class TimerStatic extends TimerSuperClass {
 		initialize();
 	}
 	
-	public TimerStatic(final Context context, Experiment exp, SharedPreferences sharedPreferences) {
-		
-		super(context, exp);
-		
-		constructFromSharedPreferences(sharedPreferences);
-		
-		this.expBL = (ExperimentBudgetLine) exp;
-		this.createAlarmsBool = true;
-		
-		initialize();
-
-	}
-	
-	public TimerStatic(final Context context, Experiment exp, SharedPreferences sharedPreferences, boolean createAlarmsBool) {
+	public TimerStatic(Context context, Experiment exp, SharedPreferences sharedPreferences, boolean createAlarmsBool) {
 		
 		super(context, exp);
 		

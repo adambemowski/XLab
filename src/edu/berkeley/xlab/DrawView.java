@@ -41,6 +41,9 @@ public class DrawView extends View {
     /** y value of moving dot. */
     private static int dotY;
     
+    /** currency indicator */
+    private static char currency;
+    
     private DecimalFormat formatter = new DecimalFormat("###,###,##0.00");
     
     private static String xLabel;
@@ -66,9 +69,9 @@ public class DrawView extends View {
         //draw the graph labels.
         paint.setTextSize(23);
         canvas.rotate(-90);
-        canvas.drawText(yLabel + ": " + formatter.format(ExpActivityBudgetLine.getY()) + " " + yUnit, -300, 20, paint);
+        canvas.drawText(((currency == '-') ? (yLabel + ": ") : currency) + formatter.format(ExpActivityBudgetLine.getY()) + ((currency == '-') ? (" " + yUnit) : ""), -300, 20, paint);
         canvas.rotate(90);
-        canvas.drawText( xLabel + ": " + formatter.format(ExpActivityBudgetLine.getX()) + " " + xUnit, 140, 430, paint);
+        canvas.drawText(((currency == '-') ? (xLabel + ": ") : currency) + formatter.format(ExpActivityBudgetLine.getX()) + ((currency == '-') ? (" " + xUnit) : ""), 140, 430, paint);
         
         //draw the budget line.
         paint.setColor(Color.RED);
@@ -79,11 +82,13 @@ public class DrawView extends View {
         canvas.drawCircle(dotX, dotY, 7, paint);
     }
     
-    public static void setLabels(String x, String y, String xCurrency, String yCurrency) {
+    public static void setLabels(String x, String y, String xCurrency, String yCurrency, char currencyInput) {
         xLabel = x;
         yLabel = y;
         xUnit = xCurrency;
         yUnit = yCurrency;
+        currency = currencyInput;
+        
     }
 
     /** Sets the x and y value of the dot.

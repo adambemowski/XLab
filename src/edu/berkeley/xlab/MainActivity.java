@@ -165,11 +165,10 @@ public class MainActivity extends ListActivity {
 			    map = new ConcurrentHashMap<String, String>();
 			    map.put("title", sharedPreferences.getString("title", ""));
 			    
-			    String location = sharedPreferences.getString("location", "");
 			    String[] sessionNames = sharedPreferences.getString("sessions", "").split(",");
 			    String[] lineNames = context.getSharedPreferences(sessionNames[0], Context.MODE_PRIVATE).getString("lines", "").split(",");
 			    int unitsLeft = (sessionNames.length - 1 - sharedPreferences.getInt("currSession", 0)) * lineNames.length + lineNames.length -sharedPreferences.getInt("currLine", 0);
-			    map.put("location", (location != "") ? location : unitsLeft + ((unitsLeft == 1) ? " line left" : " lines left"));
+			    map.put("location", (sharedPreferences.getInt("typeId", 0) != 1) ? sharedPreferences.getString("location", "") : unitsLeft + ((unitsLeft == 1) ? " line left" : " lines left"));
 			    switch(sharedPreferences.getInt("typeId", Constants.XLAB_TQ_EXP)) {
 			    case Constants.XLAB_TQ_EXP:
 			    	map.put("img", String.valueOf(R.drawable.ic_tq));

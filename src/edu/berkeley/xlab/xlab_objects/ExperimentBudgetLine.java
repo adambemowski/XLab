@@ -13,53 +13,6 @@ import edu.berkeley.xlab.ExpActivityBudgetLine;
 import edu.berkeley.xlab.constants.Constants;
 import edu.berkeley.xlab.util.Utils;
 
-/*
- * Defines budget-line experiment
- * 
- * @author Daniel Vizzini
- * 
- * The following is an example of a string array that may be received, to illustrate how the objects in the package work:
- * 
- * For each experiment (Java object XLabBudgetLineExperiement):
- * 	id (integer), title, lat, lon, radius, probabilistic (true if you get either X or Y, false if you get both),  prob_x (probability of getting X, only applicable if probabilistic is true), x_label (label of x axis), x_units (units of x axis), x_max (maximum x intercept), x_min (minimum x intercept), y_label (label of y axis), y_uints (units of y axis), y_max (maximum y intercept), y_min (minimum y intercept), 
- * 
- * Then, for each experiment, a number of sessions for the set of budget lines subjects get at a given time (Java object Session)
- * 	"session_parser" (for parsing), id (1 through number of Sessions), line_chosen (which line in the session will actually dictate rewards),
- * 
- * Then, for each session,  a number of lines (Java object Line):
- * 	"line_parser" (for parsing), id (1 through number of Lines), x_int (x-intercept of line), y_int (y-intercept of line), winner ("X" if only X is rewarded, "Y" otherwise, only applicable if probabilistic is true)
- * 
- * Example encompassing a two-session probabilistic experiment in which line and a three-session non-probabilistic experiment (note it will come as one continuous string, with a newline between the experiments):
- * 
- * 14,Muscovite Risk/Reward,55.75,37.70,200,1,0.5,Reward if X chosen,Rubles,1500,750,Reward if Y chosen,Rubles,1500,750,
- * 		session_parser,1,3,
- * 			line_parser,1,800,1000,X,
- * 			line_parser,2,1350,850,X,
- * 			line_parser,3,1150,1250,Y,
- * 			line_parser,4,1150,1250,Y,
- * 		session_parser,2,2,
- * 			line_parser,1,1100,1000,Y,
- * 			line_parser,2,750,1150,X,
- * 			line_parser,3,1450,850,X,
- * 			line_parser,4,850,1050,Y,
- * 16,Kamchatkan Diet Selector,53.01,158.65,200,0,0.5,Regional Fried Dough,Rubles,1000,500,Pickled Produce,Rubles,1000,500,
- * 		session_parser,1,1,
- * 			line_parser,1,800,700,X,
- * 			line_parser,2,750,850,X,
- * 			line_parser,3,550,500,Y,
- * 			line_parser,4,600,750,Y,
- * 		session_parser,2,4,
- * 			line_parser,1,500,600,Y,
- * 			line_parser,2,750,650,X,
- * 			line_parser,3,650,850,X,
- * 			line_parser,4,850,950,Y,
- * 		session_parser,3,1,
- * 			line_parser,1,600,600,Y,
- * 			line_parser,2,650,650,X,
- * 			line_parser,3,650,950,X,
- * 			line_parser,4,750,950,Y,"
- */
-
 public class ExperimentBudgetLine extends Experiment {
 
 	/** TAG is an identifier for the log. */
@@ -77,6 +30,8 @@ public class ExperimentBudgetLine extends Experiment {
 	private String y_units; public String getY_units() {return y_units;}
 	private float y_max; public double getY_max() {return y_max;}
 	private float y_min; public double getY_min() {return y_min;}
+	
+	private char currency; public char getCurrency() {return currency;}
 
 	private Session[] sessions; public Session[] getSessions() {return sessions;} public Session getSession(int id) {return sessions[id];}
 
@@ -130,6 +85,7 @@ public class ExperimentBudgetLine extends Experiment {
 			this.x_label = info.getString("x_label"); this.x_units = info.getString("x_units"); this.x_max = (float) info.getDouble("x_max"); this.x_min = (float) info.getDouble("x_min");
 			this.y_label = info.getString("y_label"); this.y_units = info.getString("y_units"); this.y_max = (float) info.getDouble("y_max"); this.y_min = (float) info.getDouble("y_min");
 			this.timer_status = json.getInt("timer_status");
+			this.currency = info.getString("currency").charAt(0);
 			
 			if (this.timer_status != Constants.TIMER_STATUS_NONE) {
 				this.timer_type = json.getJSONObject("timer").getInt("timer_type");
@@ -178,11 +134,6 @@ public class ExperimentBudgetLine extends Experiment {
 		constructFromSharedPreferences(context, sharedPreferences);
 	}
 	
-	public ExperimentBudgetLine(Context context, SharedPreferences sharedPreferences, int numSkipped) {
-		this.numSkipped = numSkipped;
-		constructFromSharedPreferences(context, sharedPreferences);
-	}
-	
 	private void constructFromSharedPreferences(Context context, SharedPreferences sharedPreferences) {
 		
 		Log.d(TAG,"In XLabBudgetLineExp SharedPreferences constructor");
@@ -210,6 +161,7 @@ public class ExperimentBudgetLine extends Experiment {
 		this.currLine = sharedPreferences.getInt("currLine", -1);
 		this.progress = sharedPreferences.getInt("progress", -1);
 		this.numSkipped = sharedPreferences.getInt("numSkipped", -1);
+		this.currency = sharedPreferences.getString("currency", "-").charAt(0);
 		
 		Log.d(TAG,"The x min value is  " + x_min);
 		Log.d(TAG,"The x max value is  " + x_max);
@@ -308,6 +260,7 @@ public class ExperimentBudgetLine extends Experiment {
 			editor.putInt("currLine", currLine);
 			editor.putInt("progress", progress);
 			editor.putInt("numSkipped", numSkipped);
+			editor.putString("currency", String.valueOf(currency));
 			editor.commit();
 			
 			appendList(context, EXP_LIST);
