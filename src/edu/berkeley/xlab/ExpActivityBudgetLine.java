@@ -98,6 +98,9 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 	/** the currency character ($, €, or '-', where '-' indicates a non-monetary reward) */
 	char currency;
 	
+	/** the maximum of X_max and Y_max. */
+	float max;
+	
 	private boolean holdThreadRunning = false;
 	private boolean cancelHoldThread = false;
 	private Handler handler = new Handler();
@@ -258,7 +261,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 	/** Changes sets dot based on progress given */
 	public void changeProgress(int progressInput) {
 		progress = progressInput;
-		DrawView.setDotValue((int) (progress * x / exp.getX_max() * 4));
+		DrawView.setDotValue((int) (progress * x / max * 4));
 		layout.invalidate();
 		explanation.setText(getExplanation());
 	}
@@ -518,7 +521,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 	 *         SeekBar
 	 */
 	public static float getX() {
-		return ((float) progress * x / (float) seekBar.getMax());
+		return (float) (progress * x) / (float) seekBar.getMax();
 	}
 
 	/**
@@ -546,20 +549,24 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 				.getX_int();
 		y = (float) exp.getSession(currentSession).getLine(currentLine)
 				.getY_int();
-		
+		currency = '$';
+		if (currency == '-') {//cannot directly compare apples and oranges
+            intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max() * 4);
+            intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);            
+        } else {//can directly compare dollars and dollars
+            max = (float) Math.max(exp.getX_max(),exp.getY_max());
+            intercepts[0] = (float) (x * seekBar.getMax() / max * 4);
+            intercepts[1] = (float) (y * seekBar.getMax() / max * 4);
+            //x =  x * (float) (exp.getX_max() / max);
+            //y =  y * (float) (exp.getY_max() / max);
+        }
+		/*
 		intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max() * 4);
 		intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);			
-
+        */
 		//TODO: this boolean is for cases where x and y max are different. Make it work with progress increments
 		/*
-		if (currency == '-') {//cannot directly compare apples and oranges
-			intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max() * 4);
-			intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);			
-		} else {//can directly compare dollars and dollars
-			double max = Math.max(exp.getX_max(),exp.getY_max());
-			intercepts[0] = (float) (x * seekBar.getMax() / max * 4);
-			intercepts[1] = (float) (y * seekBar.getMax() / max * 4);						
-		}
+		
 		*/
 		
 		slope = y / x;
@@ -634,5 +641,11 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 		String yFormatted = FORMATTER.format(y);
 		return (currency == '-') ? (yFormatted + " " + exp.getY_units() + " of " + exp.getY_label()) : (currency + yFormatted);
 	}
+
+    /*@Override
+    public void instructionsSelected() {
+        // TODO Auto-generated method stub
+        
+    }*/
 	
 }
