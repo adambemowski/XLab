@@ -5,10 +5,9 @@
     android:orientation="vertical" >
 
     <TextView
-        android:id="@+id/instructions"
+        android:id="@+id/instructionText"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="If it's a text question, just answer the question. Note that it will show up again after refresh. This will not happen after the server-side code improves.\n\nIf it's a budget line, this is an experiment in decision making. Yada yada yada... \n\nNote this text will change based on the experiment in the production version of the code." >
+        android:layout_height="wrap_content">
     </TextView>
 
 </ScrollView>

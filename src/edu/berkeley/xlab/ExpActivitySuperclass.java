@@ -102,11 +102,10 @@ public abstract class ExpActivitySuperclass extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.instructions) {
-        Intent i = new Intent("edu.berkeley.xlab.INSTRUCTIONS");
-        startActivity(i);
+            instructionsSelected();           
         }
         return false;
     }
     
-    
+    public abstract void instructionsSelected ();        
 }
