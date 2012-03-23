@@ -7,6 +7,7 @@ import edu.berkeley.xlab.xlab_objects.ResponseTQ;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -101,5 +102,15 @@ public class ExpActivityTextQuestion extends ExpActivitySuperclass implements On
 			confirmationAlert.show();
 			
 		}
-	}	
+	}
+
+    @Override
+    public void instructionsSelected() {
+        Intent i = new Intent("edu.berkeley.xlab.TQINSTRUCTIONS");
+        Bundle data = new Bundle();
+        data.putInt("ID", exp.getExpId());
+        i.putExtras(data);
+        startActivity(i);
+        
+    }	
 }

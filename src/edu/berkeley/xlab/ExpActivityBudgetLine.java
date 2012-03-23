@@ -549,7 +549,6 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 				.getX_int();
 		y = (float) exp.getSession(currentSession).getLine(currentLine)
 				.getY_int();
-		currency = '$';
 		if (currency == '-') {//cannot directly compare apples and oranges
             intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max() * 4);
             intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);            
@@ -557,17 +556,7 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
             max = (float) Math.max(exp.getX_max(),exp.getY_max());
             intercepts[0] = (float) (x * seekBar.getMax() / max * 4);
             intercepts[1] = (float) (y * seekBar.getMax() / max * 4);
-            //x =  x * (float) (exp.getX_max() / max);
-            //y =  y * (float) (exp.getY_max() / max);
         }
-		/*
-		intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max() * 4);
-		intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);			
-        */
-		//TODO: this boolean is for cases where x and y max are different. Make it work with progress increments
-		/*
-		
-		*/
 		
 		slope = y / x;
 		seekBar.setProgress(50);
@@ -642,10 +631,13 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 		return (currency == '-') ? (yFormatted + " " + exp.getY_units() + " of " + exp.getY_label()) : (currency + yFormatted);
 	}
 
-    /*@Override
+    @Override
     public void instructionsSelected() {
-        // TODO Auto-generated method stub
-        
-    }*/
+        Intent i = new Intent("edu.berkeley.xlab.BLINSTRUCTIONS");
+        Bundle data = new Bundle();
+        data.putInt("ID", exp.getExpId());
+        i.putExtras(data);
+        startActivity(i);
+    }
 	
 }
