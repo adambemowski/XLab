@@ -261,7 +261,12 @@ public class ExpActivityBudgetLine extends ExpActivitySuperclass implements Seek
 	/** Changes sets dot based on progress given */
 	public void changeProgress(int progressInput) {
 		progress = progressInput;
-		DrawView.setDotValue((int) (progress * x / max * 4));
+		if (max != 0) {
+		    DrawView.setDotValue((int) (progress * (x / max) * 4));
+		} else {
+		    DrawView.setDotValue((int) (progress * (x / exp.getX_max()) * 4));
+		}
+		
 		layout.invalidate();
 		explanation.setText(getExplanation());
 	}
