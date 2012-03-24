@@ -9,4 +9,17 @@
     <string name="menu_deleteSPs">Delete Experiments</string>
     <string name="menu_debugTQ">Debug TQ</string>
     
+    <!--  Budget Line Instructions -->
+    <string name="BLinstrction_prob">"This is the probabilistic instruction text for a budget line experiment. \n\nIf it\'s a text question, just answer the question. Note that it will show up again after refresh. 
+        This will not happen after the server-side code improves. \n\nIf it\'s a budget line, this is an experiment in decision making. 
+        Note this text will change based on the experiment in the production version of the code."</string>
+    <string name="BLinstrction_NoProb">This is the NON-probabilistic instruction text for a budget line experiment. \n\nIf it\'s a text question, just answer the question. Note that it will show up again after refresh. 
+        This will not happen after the server-side code improves.\n\nIf it\'s a budget line, this is an experiment in decision making. 
+        \n\nNote this text will change based on the experiment in the production version of the code.</string>
+    
+    <!-- Text Question Instructions -->
+    <string name="TQinstruction">This is the instruction text for a Text Question.\n\nIf it\'s a text question, just answer the question. Note that it will show up again after refresh. 
+        This will not happen after the server-side code improves.\n\nIf it\'s a budget line, this is an experiment in decision making. 
+        \n\nNote this text will change based on the experiment in the production version of the code.</string>
+    
 </resources>
