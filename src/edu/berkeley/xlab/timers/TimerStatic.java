@@ -133,9 +133,10 @@ public class TimerStatic extends TimerSuperClass {
 	
 	/**
 	 * Creates GregorianCalendar object by adding a uniform random number between 0 and numDays of days and a uniform random number between the start time and (endTime - 1) to Date, and then adds to the times ArrayList
-	 * If times already contains the GregorianCalendar object generated, a new GregorianCalendar objet will be generated and added to times
+	 * If times already contains the GregorianCalendar object generated, a new GregorianCalendar object will be generated and added to times
 	 */
 	private void pickDate() {
+		
 		//Monte Carlo engine
 		Random r = new Random();
 	    
@@ -156,6 +157,7 @@ public class TimerStatic extends TimerSuperClass {
 	    } else {
 	    	pickDate();
 	    }
+	    
 	}
 	
 	private void initialize() {
@@ -189,11 +191,13 @@ public class TimerStatic extends TimerSuperClass {
 		
 		((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(exp.getExpId());
 
+		// create the pending intent
 		Log.d(TAG, "creating timer: times.get(" + expBL.getCurrLine() + "): " + times.get(expBL.getCurrLine()));
 		Intent intent = new Intent(context, AlarmReceiver.class);
 		intent.putExtra("expId", expBL.getExpId());
+		intent.putExtra("nextNextTime", times.get(expBL.getCurrLine() + 1) < times.size() ? times.get(expBL.getCurrLine() + 1) : 0L);//so next alarm can be set immediately
 		PendingIntent sender = PendingIntent.getBroadcast(context, expBL.getExpId(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
-		 
+		
 		// Get the AlarmManager service
 		AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 		am.set(AlarmManager.RTC_WAKEUP, times.get(expBL.getCurrLine()), sender);
