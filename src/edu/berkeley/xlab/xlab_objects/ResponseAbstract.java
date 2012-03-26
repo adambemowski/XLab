@@ -6,7 +6,7 @@ package edu.berkeley.xlab.xlab_objects;
  * @author dvizzini
  *
  */
-public abstract class Response extends XLabSuperObject {
+public abstract class ResponseAbstract extends XLabSuperObject {
 	
 	/** Filename of list of SharedPreferences of responses given*/
 	public static final String RESPONSES_LIST = "response_shared_preference_list";

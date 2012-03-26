@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -39,6 +40,9 @@ import android.util.Log;
 public class Utils {
 	
 	public static final String TAG = "ModeChoice-UTIL";
+	
+	/** decimal FORMATTER */
+	public static final DecimalFormat FORMATTER_PERCENT = new DecimalFormat("0%");
 	
 	public static void setStringPreference(Context context, String prefKey, String prefValue) {
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);

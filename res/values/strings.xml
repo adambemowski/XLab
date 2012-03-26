@@ -6,20 +6,145 @@
     <string name="menu_refresh">Refresh Experiments</string>
     <string name="menu_turnoff">Turn GPS Off</string>
     <string name="menu_turnon">Turn GPS On</string>
-    <string name="menu_deleteSPs">Delete Experiments</string>
+    <string name="menu_clearSPs">Clear Experiments</string>
     <string name="menu_debugTQ">Debug TQ</string>
     
-    <!--  Budget Line Instructions -->
-    <string name="BLinstrction_prob">"This is the probabilistic instruction text for a budget line experiment. \n\nIf it\'s a text question, just answer the question. Note that it will show up again after refresh. 
-        This will not happen after the server-side code improves. \n\nIf it\'s a budget line, this is an experiment in decision making. 
-        Note this text will change based on the experiment in the production version of the code."</string>
-    <string name="BLinstrction_NoProb">This is the NON-probabilistic instruction text for a budget line experiment. \n\nIf it\'s a text question, just answer the question. Note that it will show up again after refresh. 
-        This will not happen after the server-side code improves.\n\nIf it\'s a budget line, this is an experiment in decision making. 
-        \n\nNote this text will change based on the experiment in the production version of the code.</string>
+    <!-- Figure descriptions -->
+    <string name="figure_1_description">Figure 1 from http://emlab.berkeley.edu/~kariv/CFGK_III_A1.pdf</string>
+    <string name="figure_2_description">Figure 1 from http://emlab.berkeley.edu/~kariv/CFGK_III_A1.pdf</string>
     
+    <!-- Budget Line Instructions -->
+
+    <!-- Notice -->
+    <string name="budget_line_instruction_notice">
+        \nThese instructions can be viewed at any time by hitting the menu button while viewing this budget line and selecting Instructions.\n
+	</string>
+
+    <!-- Main Block 0 -->
+    <string name="budget_line_instruction_main_prob_00">
+        This is an experiment in decision-making.
+        Your payoffs will depend partly on your decisions and partly on chance.
+        Please pay careful attention to the instructions as a considerable amount of\u0020
+	</string>
+    <string name="budget_line_instruction_main_nonprob_00">
+        This is an experiment in your preferences.
+        Your payoffs will depend partly on your decisions and partly on chance.
+        Please pay careful attention to the instructions as a considerable amount of\u0020
+	</string>
+   	<!-- currency != '-' ? "money is " : x_units + " and " + "y_units are"  -->
+    <string name="budget_line_instruction_main_all_01">
+    	\u0020at stake.\n\nIn this experiment, you will participate in\u0020
+	</string>
+	<!-- numSessions sessions of numRounds independent decision problems -->
+    <string name="budget_line_instruction_main_all_02">
+    	\u0020that share a common form. 
+    	This section describes in detail the process that will be repeated in all decision problems.\n\nIn each decision problem you will be asked to allocate resources between two accounts.
+    	One account corresponds to the <i>x</i>-axis and the other to the <i>y</i>-axis in the two-dimensional graph.
+    	Each choice will involve choosing a point on a line representing possible resource allocations.
+    	Examples of lines that you might face appear below:\n
+    </string>
+
+   	<!-- Figure 1 -->
+
+    <!-- Main Block 1 -->
+    <string name="budget_line_instruction_main_all_03">
+        \nIn each choice, you may choose any x and y pair that is on the line.	
+        For example, as illustrated below, choice <i>A</i> represents a decision to allocate <i>q</i>\u0020
+    </string>
+	<!-- currency != '-' ? verbose_currency_name_plural : x_units -->
+    <string name="budget_line_instruction_main_all_04">    
+        \u0020in the <i>x</i> account and <i>r</i>\u0020
+	</string>
+	<!-- currency != '-' ? verbose_currency_name_plural : y_units -->
+    <string name="budget_line_instruction_main_all_05">
+    	\u0020in the <i>y</i> account.
+    	Another possible allocation is <i>B</i>, in which you allocate <i>w</i>\u0020
+	</string>
+	<!-- currency != '-' ? verbose_currency_name_plural : x_units -->
+    <string name="budget_line_instruction_main_all_06">
+		\u0020in the <i>x</i> account and <i>z</i>\u0020
+    </string>
+	<!-- currency != '-' ? verbose_currency_name_plural : y_units -->
+    <string name="budget_line_instruction_main_all_07">
+		\u0020in the <i>y</i> account.\n
+	</string>
+
+   	<!-- Figure 2 -->
+
+    <!-- Main Block 2 -->
+    <string name="budget_line_instruction_main_prob_08">
+        \nYour payoff at each decision round is determined by the amounts in your <i>x</i> and <i>y</i> accounts.
+		At the end of the round, the computer will randomly select one of the accounts, <i>x</i> or <i>y</i>.
+		For each participant, account <i>x</i> will be selected with a
+	</string>
+    <string name="budget_line_instruction_main_nonprob_08">
+    	\nYour payoff at each decision round is determined by the amounts in your <i>x</i> and <i>y</i> accounts.
+		You will receive what you chose in both accounts.\u0020
+	</string>
+    <!-- prob_x formatted as percent -->
+    <string name="budget_line_instruction_main_prob_09">
+    	\u0020chance and account <i>y</i> will be selected with a
+    </string>
+	<!-- 1 - prob_x formatted as percent -->
+    <string name="budget_line_instruction_main_prob_10">
+	    \u0020chance.
+	    You will only receive the amount you allocated to the account that was chosen.\n\nNext, you will be asked to make an allocation in another independent decision.
+	    This process will be repeated until all\u0020
+    </string>
+    <string name="budget_line_instruction_main_nonprob_10">
+	    Next, you will be asked to make an allocation in another independent decision.
+	    This process will be repeated until all\u0020
+    </string>
+    <!-- numSessions sessions of numRounds rounds is/are -->
+    <string name="budget_line_instruction_main_all_11">
+    	\u0020completed.
+	    At the end of the last round of\u0020
+    </string>
+	<!-- numSessions != 1 ? "each session" : "the experiment" -->
+    <string name="budget_line_instruction_main_all_12">
+		, you will be informed of what you have won.\n
+	</string>
+	    
+    <!-- Earnings Title -->
+    <string name="budget_line_instruction_earnings_title">
+    	<b>Earnings</b>\n
+    </string>
+    
+    <!-- Earnings Block 0 -->
+    <string name="budget_line_instruction_earnings_00">
+		Your earnings in the experiment are determined as follows.
+    	At the end of 
+    </string>
+	<!-- numSessions != 1 ? "each session" : "the experiment" -->
+    <string name="budget_line_instruction_earnings_01">
+    	, the computer will randomly select one decision round from each participant to carry out (that is, 1 out of\u0020
+    </string>
+	<!-- numRounds -->
+    <string name="budget_line_instruction_earnings_02">
+    	). 
+    	The round selected depends solely upon chance. 
+    	For each participant, it is equally likely that any round will be chosen.
+		The round selected, your choice and your payment will be shown.
+		You will receive your payment IN AN AS YET UNDETERMINED METHOD.\n
+	</string>
+	
+    <!-- Confidentiality Title -->
+	<string name="budget_line_instruction_confidentiality_title">
+    	<b>Confidentiality</b>\n
+	</string>
+	
+    <!-- Confidentiality Block 0 -->
+	<string name="budget_line_instruction_confidentiality_00">
+		Your participation in the experiment and any information about your payoffs will be kept strictly conﬁdential.
+		You will never be asked to reveal your identity to anyone during the course of the experiment.
+		Neither the experimenters nor the other participants will be able to link you to any of your decisions.
+		In order to keep your decisions private, please do not reveal your choices to any other participant.\n
+	</string>
+	
     <!-- Text Question Instructions -->
-    <string name="TQinstruction">This is the instruction text for a Text Question.\n\nIf it\'s a text question, just answer the question. Note that it will show up again after refresh. 
-        This will not happen after the server-side code improves.\n\nIf it\'s a budget line, this is an experiment in decision making. 
-        \n\nNote this text will change based on the experiment in the production version of the code.</string>
+    <string name="text_question_instruction">
+        Just answer the question.\n\nNote that it will show up again after refresh. 
+        This will not happen after the server-side code improves.
+	</string>
     
 </resources>

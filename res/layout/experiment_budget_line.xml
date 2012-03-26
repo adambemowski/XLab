@@ -5,6 +5,7 @@
     android:layout_height="fill_parent"
     android:id="@+id/layout"
     >
+    
     <TextView
         android:id="@+id/title"
         android:layout_width="fill_parent" 
@@ -12,7 +13,7 @@
         android:gravity="center"
         android:textSize="24dp"
         />
-    <edu.berkeley.xlab.DrawView
+    <edu.berkeley.xlab.ExpActivityBudgetLineDrawView
         android:id="@+id/yourID"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"

@@ -12,14 +12,14 @@ import android.util.Log;
  * @author dvizzini
  *
  */
-public class ResponseTQ extends Response {
+public class ResponseTextQuestion extends ResponseAbstract {
 
 	/** TAG is an identifier for the log. */
 	public static final String TAG = "XLab-Chosen";
 
 	private String answer; public String getAnswer() {return answer;}
 	
-	public ResponseTQ(Context context, int expId, String answer) {
+	public ResponseTextQuestion(Context context, int expId, String answer) {
 		
 		Log.d(TAG,"In Chosen explicit constructor");
 		
@@ -34,7 +34,7 @@ public class ResponseTQ extends Response {
 	/** 
 	 * @param sharedPreferences
 	 */
-	public ResponseTQ(SharedPreferences sharedPreferences) {
+	public ResponseTextQuestion(SharedPreferences sharedPreferences) {
 		
 		Log.d(TAG,"In Chosen SharedPreferences constructor");
 		
@@ -55,7 +55,7 @@ public class ResponseTQ extends Response {
 		editor.putString("answer", answer);
 		editor.commit();
 		
-		appendList(context, Response.RESPONSES_LIST);
+		appendList(context, ResponseAbstract.RESPONSES_LIST);
 		
 	}
 

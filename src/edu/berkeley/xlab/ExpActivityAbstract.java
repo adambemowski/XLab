@@ -2,13 +2,12 @@ package edu.berkeley.xlab;
 
 import java.text.DecimalFormat;
 
-import edu.berkeley.xlab.xlab_objects.Experiment;
+import edu.berkeley.xlab.xlab_objects.ExperimentAbstract;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.util.Log;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -19,16 +18,13 @@ import android.view.MenuItem;
  * 
  * @author Daniel Vizzini
  */
-public abstract class ExpActivitySuperclass extends Activity {
+public abstract class ExpActivityAbstract extends Activity {
 
 	/** TAG is an identifier for the log. */
 	public static final String TAG = "XLab - ExpActivitySuperclass";
 	
 	/** decimal FORMATTER */
 	public static final DecimalFormat FORMATTER = new DecimalFormat("###,###,##0.00");
-
-	/** day FORMATTER */
-	public static final DecimalFormat DAY_FORMATTER = new DecimalFormat("#");
 
 	/** application context for Shared Preferences */
 	protected Context context;
@@ -60,7 +56,7 @@ public abstract class ExpActivitySuperclass extends Activity {
 	 * @param exp Experiment object associated with this activity
 	 * @param dialogMessage message for dialog box
 	 */
-	protected void cleanUpExp(final Experiment exp, String dialogMessage) {		
+	protected void cleanUpExp(final ExperimentAbstract exp, String dialogMessage) {		
 		
 		AlertDialog.Builder builder = new AlertDialog.Builder(activity);				
 		builder.setMessage(dialogMessage);
@@ -79,7 +75,7 @@ public abstract class ExpActivitySuperclass extends Activity {
 	 * Cleans the Result's SharedPreferences from the phone
 	 * @param exp Experiment object associated with this activity
 	 */
-	protected void cleanUpExp(Experiment exp) {		
+	protected void cleanUpExp(ExperimentAbstract exp) {		
 		
 		if (exp.isDone()) {
 			Log.d(TAG, "Calling Refresh experiments with hit order");

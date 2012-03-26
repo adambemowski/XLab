@@ -4,7 +4,7 @@ import java.util.Random;
 
 import edu.berkeley.xlab.AlarmReceiver;
 import edu.berkeley.xlab.constants.Constants;
-import edu.berkeley.xlab.xlab_objects.Experiment;
+import edu.berkeley.xlab.xlab_objects.ExperimentAbstract;
 
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -21,7 +21,7 @@ import android.util.Log;
  * If timerStatus is 2 and subject does not answer all experiment segments within specified time, he or she receives nothing.
  * @author dvizzini
  */
-public class TimerDynamic extends TimerSuperClass {
+public class TimerDynamic extends TimerAbstract {
 	
 	protected final int intervalMax;
 	
@@ -32,7 +32,7 @@ public class TimerDynamic extends TimerSuperClass {
 	private SharedPreferences.Editor editor;
 
 	
-	public TimerDynamic(Context context, Experiment exp, boolean[] dayEligibility, int intervalMin, int intervalMax) {
+	public TimerDynamic(Context context, ExperimentAbstract exp, boolean[] dayEligibility, int intervalMin, int intervalMax) {
 		
 		super(context, exp, -1L, dayEligibility);
 		
@@ -53,7 +53,7 @@ public class TimerDynamic extends TimerSuperClass {
 		
 	}
 		
-	public TimerDynamic(Context context, Activity activity, Experiment exp, SharedPreferences sharedPreferences) {
+	public TimerDynamic(Context context, Activity activity, ExperimentAbstract exp, SharedPreferences sharedPreferences) {
 		
 		super(context, exp, sharedPreferences.getLong("nextTime", -1L));
 		

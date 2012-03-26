@@ -11,53 +11,53 @@ import android.util.Log;
  * @author dvizzini
  *
  */
-public class ResponseBL extends Response {
+public class ResponseBudgetLine extends ResponseAbstract {
 
 	/** TAG is an identifier for the log. */
 	public static final String TAG = "XLab-Chosen";
 
 	private int sessionId; public int getSessionId() {return sessionId;}
-	private int lineId; public int getLineId() {return lineId;}
+	private int roundId; public int getrRoundId() {return roundId;}
 	private float x_int; public float getX_int() {return x_int;}
 	private float y_int; public float getY_int() {return y_int;}
 	private float x_chosen; public float getX_chosen() {return x_chosen;}
 	private float y_chosen; public float getY_chosen() {return y_chosen;}
 	private char winner; public char getWinner() {return winner;}
-	private boolean line_chosen_boolean; public boolean getLine_chosen_boolean() {return line_chosen_boolean;}
+	private boolean round_chosen_boolean; public boolean getRound_chosen_boolean() {return round_chosen_boolean;}
 	
-	public ResponseBL(Context context, int expId, int sessionId, int lineId, float x_int, float y_int, float x_chosen, float y_chosen, char winner, boolean line_chosen_boolean) {
+	public ResponseBudgetLine(Context context, int expId, int sessionId, int roundId, float x_int, float y_int, float x_chosen, float y_chosen, char winner, boolean round_chosen_boolean) {
 		
 		Log.d(TAG,"In Chosen explicit constructor");
 		
 		this.typeId = Constants.XLAB_BL_EXP;
 		this.expId = expId;
 		this.sessionId = sessionId;
-		this.lineId = lineId;
+		this.roundId = roundId;
 		this.x_int = x_int;
 		this.y_int = y_int;
 		this.x_chosen = x_chosen;
 		this.y_chosen = y_chosen;
 		this.winner = winner;
-		this.line_chosen_boolean = line_chosen_boolean;
+		this.round_chosen_boolean = round_chosen_boolean;
 		
 		this.save(context);
 		
 	}
 
-	public ResponseBL(SharedPreferences sharedPreferences) {
+	public ResponseBudgetLine(SharedPreferences sharedPreferences) {
 		
 		Log.d(TAG,"In Chosen SharedPreferences constructor");
 		
 		this.typeId = Constants.XLAB_BL_EXP;
 		this.expId = sharedPreferences.getInt("expId",-1);
 		this.sessionId = sharedPreferences.getInt("sessionId",-1);
-		this.lineId = sharedPreferences.getInt("lineId",-1);
+		this.roundId = sharedPreferences.getInt("roundId",-1);
 		this.x_int = (float)sharedPreferences.getFloat("x_int",(float)-1);
 		this.y_int = (float)sharedPreferences.getFloat("y_int",(float)-1);
 		this.x_chosen = (float)sharedPreferences.getFloat("x_chosen",(float)-1);
 		this.y_chosen = (float)sharedPreferences.getFloat("y_chosen",(float)-1);
 		this.winner = sharedPreferences.getString("winner","").charAt(0);
-		this.line_chosen_boolean = sharedPreferences.getBoolean("line_chosen_boolean",false);
+		this.round_chosen_boolean = sharedPreferences.getBoolean("round_chosen_boolean",false);
 		
 	}
 
@@ -69,24 +69,24 @@ public class ResponseBL extends Response {
 		
 		editor.putInt("typeId", typeId);
 		editor.putInt("expId", expId);
-		editor.putInt("lineId", lineId);
+		editor.putInt("roundId", roundId);
 		editor.putInt("sessionId", sessionId);
 		editor.putFloat("x_int",x_int);
 		editor.putFloat("y_int",y_int);
 		editor.putFloat("x_chosen",x_chosen);
 		editor.putFloat("y_chosen",y_chosen);
 		editor.putString("winner", String.valueOf(winner));
-		editor.putBoolean("line_chosen_boolean",line_chosen_boolean);
+		editor.putBoolean("round_chosen_boolean",round_chosen_boolean);
 		editor.commit();
 		
-		appendList(context, Response.RESPONSES_LIST);
+		appendList(context, ResponseAbstract.RESPONSES_LIST);
 		
 	}
 	
 	
 	@Override
 	public String getSPName() {
-		return(RESPONSE_PREFIX + typeId + "_"  + expId + "_" + sessionId + "_" + lineId);		
+		return(RESPONSE_PREFIX + typeId + "_"  + expId + "_" + sessionId + "_" + roundId);		
 	}
 	
 	/**
@@ -94,11 +94,11 @@ public class ResponseBL extends Response {
 	 * @param typeId Type of experiment (XLAB_BL_EXP)
 	 * @param expId Unique experiment id
 	 * @param sessionId Identifier of Session of result
-	 * @param lineId Identifier of Line of result
+	 * @param roundId Identifier of Round of result
 	 * @return name of SharedPreferences used to persistently store response
 	 */
-	public static String getSPName(int typeId, int expId, int sessionId, int lineId) {
-		return(RESPONSE_PREFIX + typeId + "_"  + expId + "_" + sessionId + "_" + lineId);
+	public static String getSPName(int typeId, int expId, int sessionId, int roundId) {
+		return(RESPONSE_PREFIX + typeId + "_"  + expId + "_" + sessionId + "_" + roundId);
 	}
 	
 }
