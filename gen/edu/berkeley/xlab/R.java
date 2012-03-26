@@ -28,7 +28,8 @@ public final class R {
         public static final int explanation=0x7f060003;
         public static final int gpsToggle=0x7f060014;
         public static final int img=0x7f06000d;
-        public static final int instructions=0x7f060008;
+        public static final int instructionText=0x7f060008;
+        public static final int instructions=0x7f060017;
         public static final int layout=0x7f060000;
         public static final int left_button=0x7f060004;
         public static final int location=0x7f06000e;
@@ -57,6 +58,13 @@ public final class R {
         public static final int superclassmenu=0x7f050001;
     }
     public static final class string {
+        public static final int BLinstrction_NoProb=0x7f040007;
+        /**   Budget Line Instructions 
+         */
+        public static final int BLinstrction_prob=0x7f040006;
+        /**  Text Question Instructions 
+         */
+        public static final int TQinstruction=0x7f040008;
         public static final int app_name=0x7f040000;
         public static final int menu_debugTQ=0x7f040005;
         public static final int menu_deleteSPs=0x7f040004;
