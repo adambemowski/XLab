@@ -9,7 +9,7 @@ import android.util.Log;
 import edu.berkeley.xlab.ExpActivityTextQuestion;
 import edu.berkeley.xlab.constants.Constants;
 
-public class ExperimentTextQuestion extends Experiment {
+public class ExperimentTextQuestion extends ExperimentAbstract {
 	
 	/** TAG is an identifier for the log. */
 	public static final String TAG = "X-Lab - XLabTextQuestion";

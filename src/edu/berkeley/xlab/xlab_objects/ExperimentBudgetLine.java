@@ -1,6 +1,5 @@
 package edu.berkeley.xlab.xlab_objects;
 
-import java.io.File;
 import java.util.Random;
 
 import org.json.JSONException;
@@ -13,7 +12,7 @@ import edu.berkeley.xlab.ExpActivityBudgetLine;
 import edu.berkeley.xlab.constants.Constants;
 import edu.berkeley.xlab.util.Utils;
 
-public class ExperimentBudgetLine extends Experiment {
+public class ExperimentBudgetLine extends ExperimentAbstract {
 
 	/** TAG is an identifier for the log. */
 	public static final String TAG = "X-Lab - XLabBudgetLineExp";
@@ -31,9 +30,9 @@ public class ExperimentBudgetLine extends Experiment {
 	private float y_max; public double getY_max() {return y_max;}
 	private float y_min; public double getY_min() {return y_min;}
 	
-	private char currency; public char getCurrency() {return currency;}
+	private String currency; public String getCurrency() {return currency;}
 
-	private Session[] sessions; public Session[] getSessions() {return sessions;} public Session getSession(int id) {return sessions[id];}
+	private SessionBudgetLine[] sessions; public SessionBudgetLine[] getSessions() {return sessions;} public SessionBudgetLine getSession(int id) {return sessions[id];}
 
 	private int currSession; public int getCurrSession() {return currSession;} 
 	public void nextSession(Context context) {
@@ -46,7 +45,7 @@ public class ExperimentBudgetLine extends Experiment {
 		}
 	}	
 	
-	private int currLine; public int getCurrLine() {return currLine;}
+	private int currRound; public int getCurrRound() {return currRound;}
 	private int progress; public int getProgress() {return progress;}
 	
 	/**
@@ -66,8 +65,8 @@ public class ExperimentBudgetLine extends Experiment {
 
 		int numSessions;
 		
-		int numLines;
-		int line_chosen;
+		int numRounds;
+		int round_chosen;
 		
 		char winner;
 		float x_int;
@@ -85,36 +84,36 @@ public class ExperimentBudgetLine extends Experiment {
 			this.x_label = info.getString("x_label"); this.x_units = info.getString("x_units"); this.x_max = (float) info.getDouble("x_max"); this.x_min = (float) info.getDouble("x_min");
 			this.y_label = info.getString("y_label"); this.y_units = info.getString("y_units"); this.y_max = (float) info.getDouble("y_max"); this.y_min = (float) info.getDouble("y_min");
 			this.timer_status = json.getInt("timer_status");
-			this.currency = info.getString("currency").charAt(0);
+			this.currency = info.getString("currency");
 			
 			if (this.timer_status != Constants.TIMER_STATUS_NONE) {
 				this.timer_type = json.getJSONObject("timer").getInt("timer_type");
 			}
 						
 			numSessions = info.getInt("number_sessions");
-			numLines = info.getInt("lines_per_session");
+			numRounds = info.getInt("lines_per_session");
 			
-			Session[] sessions = new Session[numSessions];
+			SessionBudgetLine[] sessions = new SessionBudgetLine[numSessions];
 			
 			Log.d(TAG,"Beginning of outer for");
 			
 			for (int i = 0; i < numSessions; i++) {
 
-				Line[] lines = new Line[numLines];
-				line_chosen = r.nextInt(numLines);
-				Log.d(TAG,"line_chosen: " + line_chosen);
+				RoundBudgetLine[] rounds = new RoundBudgetLine[numRounds];
+				round_chosen = r.nextInt(numRounds);
+				Log.d(TAG,"round_chosen: " + round_chosen);
 				
-				for (int j = 0; j < numLines; j++) {
+				for (int j = 0; j < numRounds; j++) {
 					
 					winner = (r.nextFloat() < prob_x) ? 'x' : 'y';
 					x_int = x_min + r.nextFloat() * (x_max - x_min);
 					y_int = y_min + r.nextFloat() * (y_max - y_min);
 					
-					lines[j] = new Line(context, expId, i, j, x_int, y_int, winner);
+					rounds[j] = new RoundBudgetLine(context, expId, i, j, x_int, y_int, winner);
 
 				}
 				
-				sessions[i] = new Session(context, expId, i, line_chosen, lines);
+				sessions[i] = new SessionBudgetLine(context, expId, i, round_chosen, rounds);
 			}
 			
 			Log.d(TAG,"End of outer for");
@@ -158,10 +157,10 @@ public class ExperimentBudgetLine extends Experiment {
 		this.y_min = sharedPreferences.getFloat("y_min", (float) -1);
 		this.timer_status = sharedPreferences.getInt("timer_status", -1);
 		this.currSession = sharedPreferences.getInt("currSession", -1);
-		this.currLine = sharedPreferences.getInt("currLine", -1);
+		this.currRound = sharedPreferences.getInt("currRound", -1);
 		this.progress = sharedPreferences.getInt("progress", -1);
 		this.numSkipped = sharedPreferences.getInt("numSkipped", -1);
-		this.currency = sharedPreferences.getString("currency", "-").charAt(0);
+		this.currency = sharedPreferences.getString("currency", "-");
 		
 		Log.d(TAG,"The x min value is  " + x_min);
 		Log.d(TAG,"The x max value is  " + x_max);
@@ -174,10 +173,10 @@ public class ExperimentBudgetLine extends Experiment {
 		}
 					
 		String[] sessionNames = sharedPreferences.getString("sessions", "").split(",");
-		Session[] sessions = new Session[sessionNames.length];
+		SessionBudgetLine[] sessions = new SessionBudgetLine[sessionNames.length];
 		for (int i = 0; i < sessions.length; i++) {
 			Log.d(TAG,"Instantiating " + sessionNames[i]);
-			sessions[i] = new Session(context, context.getSharedPreferences(sessionNames[i], Context.MODE_PRIVATE));
+			sessions[i] = new SessionBudgetLine(context, context.getSharedPreferences(sessionNames[i], Context.MODE_PRIVATE));
 		}
 
 		this.sessions = sessions;		
@@ -190,22 +189,22 @@ public class ExperimentBudgetLine extends Experiment {
 		this.activity = ExpActivityBudgetLine.class;		
 	}
 
-	/** sets currLine and currSession to zero */
+	/** sets currRound and currSession to zero */
 	private void initialize() {
 		this.progress = -1;
 		this.currSession = 0;
-		this.currLine = 0;
+		this.currRound = 0;
 	}
 	
 	/**
-	 *  Iterates to next line. Will set currLine to 0 and iterate to next session if necessary.
+	 *  Iterates to next round. Will set currRound to 0 and iterate to next session if necessary.
 	 *  Will set done to true if all sessions have been completed.
 	 */
-	public void nextLine(Context context) {
+	public void nextRound(Context context) {
 		
-		currLine = (currLine + 1) % sessions[this.getCurrSession()].getLines().length; 
-		Log.d(TAG,"Current Line: " + currLine);
-		if (currLine == 0) {
+		currRound = (currRound + 1) % sessions[this.getCurrSession()].getRounds().length; 
+		Log.d(TAG,"Current Round: " + currRound);
+		if (currRound == 0) {
 			this.nextSession(context);
 		} else {
 			saveState(context, progress);
@@ -218,7 +217,7 @@ public class ExperimentBudgetLine extends Experiment {
 		
 		Log.d(TAG, "In save of " + title);
 
-		if (!Utils.checkIfSaved(context, getSPName(), Experiment.EXP_LIST)) {
+		if (!Utils.checkIfSaved(context, getSPName(), ExperimentAbstract.EXP_LIST)) {
 			
 			Log.d(TAG, "Saving " + title);
 			
@@ -226,8 +225,8 @@ public class ExperimentBudgetLine extends Experiment {
 			
 			this.initialize();
 			
-			for (Session session : sessions) {
-				sessionsString = sessionsString + Session.SESSION_PREFIX + expId + "_" + session.getSessionId() + ",";
+			for (SessionBudgetLine session : sessions) {
+				sessionsString = sessionsString + SessionBudgetLine.SESSION_PREFIX + expId + "_" + session.getSessionId() + ",";
 				session.save(context);
 			}
 
@@ -254,10 +253,9 @@ public class ExperimentBudgetLine extends Experiment {
 			editor.putFloat("y_min", y_min);
 			editor.putInt("timer_status", timer_status);
 			editor.putInt("currSession", currSession);
-			editor.putInt("currLine", currLine);
+			editor.putInt("currRound", currRound);
 			editor.putString("sessions",sessionsString);
 			editor.putInt("currSession", currSession);
-			editor.putInt("currLine", currLine);
 			editor.putInt("progress", progress);
 			editor.putInt("numSkipped", numSkipped);
 			editor.putString("currency", String.valueOf(currency));
@@ -282,30 +280,26 @@ public class ExperimentBudgetLine extends Experiment {
 		SharedPreferences.Editor editor = sharedPreferences.edit();
 		
 		editor.putInt("currSession", currSession);
-		editor.putInt("currLine", currLine);
+		editor.putInt("currRound", currRound);
 		editor.putInt("progress", progress);
 		editor.commit();
 	
 	}
 	
 	@Override
-	public void deleteSharedPreferences(Context context) {
+	public void clearSharedPreferences(Context context) {
 
-		//delete child SharedPreferences
-		for (Session session : this.sessions){
-			session.deleteSharedPreferences(context);
+		//clear child SharedPreferences
+		for (SessionBudgetLine session : this.sessions){
+			session.clearSharedPreferences(context);
 		}
 		
-		//delete SharedPreferences
-		Log.d(TAG,"File to be deleted: " + "/data/data/" + context.getPackageName() + "/shared_prefs/" + this.getSPName() + ".xml");
-		if (new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + this.getSPName() + ".xml").delete()) {
-			Log.d(TAG,"File apparently deleted");
-		} else {
-			Log.d(TAG,"File apparently did not delete");
-		}
+		//clear SharedPreferences
+		Log.d(TAG,"File to be cleared: " + this.getSPName());
+		context.getSharedPreferences(this.getSPName(), Context.MODE_PRIVATE).edit().clear();
 		
 		//remove from SharedPrefrences list of SharedPreferences
-		SharedPreferences sharedPreferencesList = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE);
+		SharedPreferences sharedPreferencesList = context.getSharedPreferences(ExperimentAbstract.EXP_LIST, Context.MODE_PRIVATE);
 		SharedPreferences.Editor listEditor = sharedPreferencesList.edit();
 
 		String[] halfList = sharedPreferencesList.getString("SharedPreferences","").split(this.getSPName() + ",");

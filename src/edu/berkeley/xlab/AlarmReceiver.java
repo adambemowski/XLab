@@ -1,6 +1,6 @@
 package edu.berkeley.xlab;
 
-import edu.berkeley.xlab.xlab_objects.Experiment;
+import edu.berkeley.xlab.xlab_objects.ExperimentAbstract;
 import edu.berkeley.xlab.xlab_objects.ExperimentBudgetLine;
 import android.app.AlarmManager;
 import android.app.NotificationManager;
@@ -30,7 +30,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 			}
 			
 			Log.d(TAG,"String.valueOf(intent.getExtras().getInt(\"expID\"): " + String.valueOf(intent.getExtras().getInt("expId")));
-			new Notifier(context, (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE), new ExperimentBudgetLine(context, context.getSharedPreferences(Experiment.makeSPName(intent.getExtras().getInt("expId")),Context.MODE_PRIVATE))).run();
+			new Notifier(context, (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE), new ExperimentBudgetLine(context, context.getSharedPreferences(ExperimentAbstract.makeSPName(intent.getExtras().getInt("expId")),Context.MODE_PRIVATE))).run();
 		} catch (Exception e) {	
 			e.printStackTrace();
 		}

@@ -9,7 +9,7 @@ import java.util.Random;
 import edu.berkeley.xlab.AlarmReceiver;
 import edu.berkeley.xlab.constants.Constants;
 import edu.berkeley.xlab.util.Utils;
-import edu.berkeley.xlab.xlab_objects.Experiment;
+import edu.berkeley.xlab.xlab_objects.ExperimentAbstract;
 import edu.berkeley.xlab.xlab_objects.ExperimentBudgetLine;
 
 import android.app.AlarmManager;
@@ -25,12 +25,12 @@ import android.util.Log;
  * If timerStatus is 2 and subject does not answer within specified time, he or she cannot participate in this segment of the experiment and will receive no reward if applicable
  * @author dvizzini
  */
-public class TimerStatic extends TimerSuperClass {
+public class TimerStatic extends TimerAbstract {
 	
 	protected ArrayList<Long> times;
 	protected long currentTime;
-	//TODO: For now just the number of lines in a session for ExperimentBudgetLines. In the future make this flexible enough for all types of experiments and either session or line (or line's generalization)
-	//TODO: When above TODO is addressed delete following line and use exp
+	//TODO: For now just the number of rounds in a session for ExperimentBudgetLines. In the future make this flexible enough for all types of experiments and either session or round
+	//TODO: When above TODO is addressed delete following round and use exp
 	protected ExperimentBudgetLine expBL;
 	public ExperimentBudgetLine getExpBL() {
 		return expBL;
@@ -39,7 +39,7 @@ public class TimerStatic extends TimerSuperClass {
 	protected int numDays;
 	protected boolean createAlarmsBool;
 	
-	public TimerStatic(Context context, Experiment exp, boolean[] dayEligibility, GregorianCalendar startDate, GregorianCalendar endDate, int startTime, int endTime) {
+	public TimerStatic(Context context, ExperimentAbstract exp, boolean[] dayEligibility, GregorianCalendar startDate, GregorianCalendar endDate, int startTime, int endTime) {
 		
 		super(context, exp, dayEligibility);
 		
@@ -54,7 +54,7 @@ public class TimerStatic extends TimerSuperClass {
 		this.endTime = endTime;
 		this.createAlarmsBool = true;
 		
-		numExpUnits = expBL.getSession(expBL.getCurrSession()).getLines().length;
+		numExpUnits = expBL.getSession(expBL.getCurrSession()).getRounds().length;
 		
 		GregorianCalendar date;
 		
@@ -104,7 +104,7 @@ public class TimerStatic extends TimerSuperClass {
 		initialize();
 	}
 	
-	public TimerStatic(Context context, Experiment exp, SharedPreferences sharedPreferences, boolean createAlarmsBool) {
+	public TimerStatic(Context context, ExperimentAbstract exp, SharedPreferences sharedPreferences, boolean createAlarmsBool) {
 		
 		super(context, exp);
 		
@@ -119,7 +119,7 @@ public class TimerStatic extends TimerSuperClass {
 	private void constructFromSharedPreferences(SharedPreferences sharedPreferences) {
 		this.expBL = (ExperimentBudgetLine) exp;
 		this.times = new ArrayList<Long>();
-		this.numExpUnits = expBL.getSession(expBL.getCurrSession()).getLines().length;
+		this.numExpUnits = expBL.getSession(expBL.getCurrSession()).getRounds().length;
 		this.currentTime = System.currentTimeMillis();
 		
 		//get times from sharedPreferences
@@ -180,7 +180,7 @@ public class TimerStatic extends TimerSuperClass {
 		
 		setAlarm();
 
-		this.nextTime = times.get(expBL.getCurrLine());
+		this.nextTime = times.get(expBL.getCurrRound());
 		saveNextTime(expBL.isDone());
 		
 		return getClosingMessage();
@@ -192,15 +192,15 @@ public class TimerStatic extends TimerSuperClass {
 		((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(exp.getExpId());
 
 		// create the pending intent
-		Log.d(TAG, "creating timer: times.get(" + expBL.getCurrLine() + "): " + times.get(expBL.getCurrLine()));
+		Log.d(TAG, "creating timer: times.get(" + expBL.getCurrRound() + "): " + times.get(expBL.getCurrRound()));
 		Intent intent = new Intent(context, AlarmReceiver.class);
 		intent.putExtra("expId", expBL.getExpId());
-		intent.putExtra("nextNextTime", times.get(expBL.getCurrLine() + 1) < times.size() ? times.get(expBL.getCurrLine() + 1) : 0L);//so next alarm can be set immediately
+		intent.putExtra("nextNextTime", times.get(expBL.getCurrRound() + 1) < times.size() ? times.get(expBL.getCurrRound() + 1) : 0L);//so next alarm can be set immediately
 		PendingIntent sender = PendingIntent.getBroadcast(context, expBL.getExpId(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		
 		// Get the AlarmManager service
 		AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-		am.set(AlarmManager.RTC_WAKEUP, times.get(expBL.getCurrLine()), sender);
+		am.set(AlarmManager.RTC_WAKEUP, times.get(expBL.getCurrRound()), sender);
 		
 	}
 	
@@ -210,7 +210,7 @@ public class TimerStatic extends TimerSuperClass {
 	 */
 	public ExperimentBudgetLine updateExp() {
 		
-		Log.d(TAG, "expBL.getCurrLine() before for: " + expBL.getCurrLine());
+		Log.d(TAG, "expBL.getCurrRound() before for: " + expBL.getCurrRound());
 		Log.d(TAG, "numExpUnits: " + numExpUnits);
 		Log.d(TAG, "currentTime: " + currentTime);
 		Log.d(TAG, "times.get(0): " + times.get(0));
@@ -218,11 +218,11 @@ public class TimerStatic extends TimerSuperClass {
 		int numSkipped = expBL.getNumSkipped();
 		
 		//set nextTime variable, numSkipped and currentExperiment
-		for (int i = expBL.getCurrLine(); i < numExpUnits; i++){
+		for (int i = expBL.getCurrRound(); i < numExpUnits; i++){
 			Log.d(TAG, "times.get(" + (i + 1) + "): " + times.get(i + 1));
 			if (times.get(i + 1) < currentTime) {//times.get(i + 1) is the last possible time that experiment segment i can be done. The first time is there for the reminder.
-				Log.d(TAG, "Skipping to line " + (i + 1));				
-				expBL.nextLine(context);//iteration is saved in SharedPreferences
+				Log.d(TAG, "Skipping to round " + (i + 1));				
+				expBL.nextRound(context);//iteration is saved in SharedPreferences
 				numSkipped++;
 			} else {
 				break;
@@ -235,10 +235,10 @@ public class TimerStatic extends TimerSuperClass {
 		if (expBL.isDone()) {
 			Log.d(TAG, "expBL is done");			
 		} else {
-			Log.d(TAG, "expBL.getCurrLine() after for: " + expBL.getCurrLine());			
+			Log.d(TAG, "expBL.getCurrRound() after for: " + expBL.getCurrRound());			
 		}
 
-		this.nextTime = times.get(expBL.getCurrLine());
+		this.nextTime = times.get(expBL.getCurrRound());
 		
 		saveNextTime(expBL.isDone());
 

@@ -3,7 +3,7 @@ package edu.berkeley.xlab.timers;
 import java.util.GregorianCalendar;
 
 import edu.berkeley.xlab.util.Utils;
-import edu.berkeley.xlab.xlab_objects.Experiment;
+import edu.berkeley.xlab.xlab_objects.ExperimentAbstract;
 
 import android.app.Activity;
 import android.content.Context;
@@ -15,7 +15,7 @@ import android.util.Log;
  * @author dvizzini
  *
  */
-public abstract class TimerSuperClass {
+public abstract class TimerAbstract {
 	
 	/**
 	 * For log
@@ -30,7 +30,7 @@ public abstract class TimerSuperClass {
 	/**
 	 * Experiment associated with instance of TimerSuperClass
 	 */
-	protected Experiment exp;
+	protected ExperimentAbstract exp;
 	
 	/**
 	 * Activity that instantiates TimerSuperClass object
@@ -41,7 +41,7 @@ public abstract class TimerSuperClass {
 	 * fetches exp object associated with experiment
 	 * @return Experiment exp
 	 */
-	public Experiment getExp() {
+	public ExperimentAbstract getExp() {
 		return exp;
 	}
 	/**
@@ -91,7 +91,7 @@ public abstract class TimerSuperClass {
 		return nextTime;
 	}
 	
-	public TimerSuperClass (Context context, Experiment exp, long nextTime, boolean[] dayEligibility) {
+	public TimerAbstract (Context context, ExperimentAbstract exp, long nextTime, boolean[] dayEligibility) {
 		this.dayEligibility = dayEligibility;
 		this.context = context;
 		this.exp = exp;
@@ -99,21 +99,21 @@ public abstract class TimerSuperClass {
 		TAG = TAG + " " + exp.getExpId();
 	}
 	
-	public TimerSuperClass (Context context, Experiment exp, long nextTime) {
+	public TimerAbstract (Context context, ExperimentAbstract exp, long nextTime) {
 		this.context = context;
 		this.exp = exp;
 		this.nextTime = nextTime;
 		TAG = TAG + " " + exp.getExpId();
 	}
 	
-	public TimerSuperClass (Context context, Experiment exp, boolean[] dayEligibility) {
+	public TimerAbstract (Context context, ExperimentAbstract exp, boolean[] dayEligibility) {
 		this.dayEligibility = dayEligibility;
 		this.context = context;
 		this.exp = exp;
 		TAG = TAG + " " + exp.getExpId();
 	}
 	
-	public TimerSuperClass (Context context, Experiment exp) {
+	public TimerAbstract (Context context, ExperimentAbstract exp) {
 		this.context = context;
 		this.exp = exp;
 		TAG = TAG + " " + exp.getExpId();

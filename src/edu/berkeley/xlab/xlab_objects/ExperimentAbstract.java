@@ -1,12 +1,10 @@
 package edu.berkeley.xlab.xlab_objects;
 
-import java.io.File;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-public abstract class Experiment extends XLabSuperObject {
+public abstract class ExperimentAbstract extends XLabSuperObject {
 	
 	/** Filename of list of SharedPreferences of responses given*/
 	public static final String EXP_LIST = "experiment_shared_preference_list";
@@ -86,17 +84,18 @@ public abstract class Experiment extends XLabSuperObject {
 	}
 	
 	/**
-	 * Deletes shared preferences associated with the Experiment
+	 * Clears shared preferences associated with the Experiment
 	 * @param context Application context
 	 */
-	public void deleteSharedPreferences(Context context) {
+	public void clearSharedPreferences(Context context) {
 
-		//delete SharedPreferences
-		Log.d(TAG,"File to be deleted: " + "/data/data/" + context.getPackageName() + "/shared_prefs/" + this.getSPName() + ".xml");
-		new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + this.getSPName() + ".xml").delete();
+		//clear SharedPreferences
+		Log.d(TAG,"File to be cleared: " + this.getSPName());
+		//new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + this.getSPName() + ".xml").delete();
+		context.getSharedPreferences(getSPName(), Context.MODE_PRIVATE).edit().clear();
 		
 		//remove from SharedPrefrences list of SharedPreferences
-		SharedPreferences sharedPreferencesList = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE);
+		SharedPreferences sharedPreferencesList = context.getSharedPreferences(ExperimentAbstract.EXP_LIST, Context.MODE_PRIVATE);
 		SharedPreferences.Editor listEditor = sharedPreferencesList.edit();
 
 		String[] halfList = sharedPreferencesList.getString("SharedPreferences","").split(this.getSPName() + ",");

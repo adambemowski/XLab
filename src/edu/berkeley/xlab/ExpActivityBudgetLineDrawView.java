@@ -13,17 +13,17 @@ import android.view.View;
 /** DrawView controls what is displayed on the graph portion of the screen.
  * @author John Gunnison
  */
-public class DrawView extends View {
+public class ExpActivityBudgetLineDrawView extends View {
 
-    public DrawView(Context context) {
+    public ExpActivityBudgetLineDrawView(Context context) {
         super(context);
     }
 
-    public DrawView(Context context, AttributeSet attrs) {
+    public ExpActivityBudgetLineDrawView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public DrawView(Context context, AttributeSet attrs, int defStyle) {
+    public ExpActivityBudgetLineDrawView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
     }
 
@@ -43,7 +43,7 @@ public class DrawView extends View {
     private static int dotY;
     
     /** currency indicator */
-    private static char currency;
+    private static String currency;
     
     private DecimalFormat formatter = new DecimalFormat("###,###,##0.00");
     
@@ -70,9 +70,9 @@ public class DrawView extends View {
         //draw the graph labels.
         paint.setTextSize(23);
         canvas.rotate(-90);
-        canvas.drawText(((currency == '-') ? (yLabel + ": ") : currency) + formatter.format(ExpActivityBudgetLine.getY()) + ((currency == '-') ? (" " + yUnit) : ""), -300, 20, paint);
+        canvas.drawText((currency.equalsIgnoreCase("-") ? (yLabel + ": ") : currency) + formatter.format(ExpActivityBudgetLine.getY()) + ((currency == "-") ? (" " + yUnit) : ""), -300, 20, paint);
         canvas.rotate(90);
-        canvas.drawText(((currency == '-') ? (xLabel + ": ") : currency) + formatter.format(ExpActivityBudgetLine.getX()) + ((currency == '-') ? (" " + xUnit) : ""), 140, 430, paint);
+        canvas.drawText((currency.equalsIgnoreCase("-") ? (xLabel + ": ") : currency) + formatter.format(ExpActivityBudgetLine.getX()) + ((currency == "-") ? (" " + xUnit) : ""), 140, 430, paint);
         
         //draw the budget line.
         paint.setColor(Color.RED);
@@ -83,7 +83,7 @@ public class DrawView extends View {
         canvas.drawCircle(dotX, dotY, 7, paint);
     }
     
-    public static void setLabels(String x, String y, String xCurrency, String yCurrency, char currencyInput) {
+    public static void setLabels(String x, String y, String xCurrency, String yCurrency, String currencyInput) {
         xLabel = x;
         yLabel = y;
         xUnit = xCurrency;

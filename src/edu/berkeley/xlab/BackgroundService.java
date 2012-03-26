@@ -306,10 +306,10 @@ public class BackgroundService extends Service {
 	private void doXLabChecks(double lat, double lon, float accuracy) {
 
 		Log.d(TAG,"In doXLabChecks");
-		String[] expNames = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
+		String[] expNames = context.getSharedPreferences(ExperimentAbstract.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
 		for(String expName : expNames) {
 
-			Experiment exp;
+			ExperimentAbstract exp;
 			SharedPreferences expSP = context.getSharedPreferences(expName, Context.MODE_PRIVATE);
 			
 			if (expSP.getInt("typeId", -1) == Constants.XLAB_TQ_EXP) {				
