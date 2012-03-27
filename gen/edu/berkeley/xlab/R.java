@@ -24,21 +24,21 @@ public final class R {
     }
     public static final class id {
         public static final int answer=0x7f060009;
-        public static final int clearSPs=0x7f060020;
-        public static final int debugTQ=0x7f060021;
-        public static final int download=0x7f06001e;
+        public static final int clearSPs=0x7f060021;
+        public static final int debugTQ=0x7f060022;
+        public static final int download=0x7f06001f;
         public static final int explanation=0x7f060003;
         public static final int figure_1=0x7f06000f;
         public static final int figure_2=0x7f060011;
-        public static final int gpsToggle=0x7f06001f;
-        public static final int img=0x7f06001c;
-        public static final int instructionText=0x7f060018;
-        public static final int instructions=0x7f060022;
+        public static final int gpsToggle=0x7f060020;
+        public static final int img=0x7f06001d;
+        public static final int instructionText=0x7f060019;
+        public static final int instructions=0x7f060023;
         public static final int layout=0x7f060000;
         public static final int left_button=0x7f060004;
-        public static final int location=0x7f06001d;
-        public static final int login_button=0x7f06001b;
-        public static final int password=0x7f06001a;
+        public static final int location=0x7f06001e;
+        public static final int login_button=0x7f06001c;
+        public static final int password=0x7f06001b;
         public static final int procede_button=0x7f060017;
         public static final int question=0x7f060008;
         public static final int result=0x7f06000a;
@@ -47,6 +47,7 @@ public final class R {
         public static final int slider=0x7f060005;
         public static final int submit_button=0x7f06000b;
         public static final int submit_status=0x7f06000c;
+        public static final int text_bottom=0x7f060018;
         public static final int text_confidentiality_block_0=0x7f060016;
         public static final int text_confidentiality_title=0x7f060015;
         public static final int text_earnings_block_0=0x7f060014;
@@ -54,9 +55,9 @@ public final class R {
         public static final int text_main_block_0=0x7f06000e;
         public static final int text_main_block_1=0x7f060010;
         public static final int text_main_block_2=0x7f060012;
-        public static final int text_notice=0x7f06000d;
+        public static final int text_top=0x7f06000d;
         public static final int title=0x7f060001;
-        public static final int username=0x7f060019;
+        public static final int username=0x7f06001a;
         public static final int yourID=0x7f060002;
     }
     public static final class layout {
@@ -73,6 +74,9 @@ public final class R {
     }
     public static final class string {
         public static final int app_name=0x7f040000;
+        /**  Bottom 
+         */
+        public static final int budget_line_instruction_bottom=0x7f04001f;
         /**  Confidentiality Block 0 
          */
         public static final int budget_line_instruction_confidentiality_00=0x7f04001e;
@@ -136,9 +140,9 @@ public final class R {
          */
         public static final int budget_line_instruction_main_prob_10=0x7f040015;
         /**  Budget Line Instructions 
- Notice 
+ Top 
          */
-        public static final int budget_line_instruction_notice=0x7f040008;
+        public static final int budget_line_instruction_top=0x7f040008;
         /**  Figure descriptions 
          */
         public static final int figure_1_description=0x7f040006;
@@ -152,6 +156,6 @@ public final class R {
         public static final int menu_turnon=0x7f040003;
         /**  Text Question Instructions 
          */
-        public static final int text_question_instruction=0x7f04001f;
+        public static final int text_question_instruction=0x7f040020;
     }
 }

@@ -210,7 +210,7 @@ public class MainActivity extends ListActivity {
 						if (clickedSP.getInt("currSession", -1) == 0 && clickedSP.getInt("currRound", -1) == 0) {
 					    	activity = InstructionsActivityBudgetLine.class;
 						} else {
-					    	activity = ExpActivityTextQuestion.class;							
+					    	activity = ExpActivityBudgetLine.class;							
 						}
 				    }
 					

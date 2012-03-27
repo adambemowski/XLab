@@ -15,8 +15,8 @@
     
     <!-- Budget Line Instructions -->
 
-    <!-- Notice -->
-    <string name="budget_line_instruction_notice">
+    <!-- Top -->
+    <string name="budget_line_instruction_top">
         \nThese instructions can be viewed at any time by hitting the menu button while viewing this budget line and selecting Instructions.\n
 	</string>
 
@@ -141,7 +141,11 @@
 		In order to keep your decisions private, please do not reveal your choices to any other participant.\n
 	</string>
 	
-    <!-- Text Question Instructions -->
+    <!-- Bottom -->
+    <string name="budget_line_instruction_bottom">
+	</string>
+
+	<!-- Text Question Instructions -->
     <string name="text_question_instruction">
         Just answer the question.\n\nNote that it will show up again after refresh. 
         This will not happen after the server-side code improves.
