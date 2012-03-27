@@ -1,0 +1,107 @@
+package edu.berkeley.xlab;
+
+import java.text.DecimalFormat;
+
+import edu.berkeley.xlab.xlab_objects.ExperimentAbstract;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.util.Log;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+
+/**
+ * Draw is an activity that controls choosing a point on a line and recording
+ * that choice.
+ * 
+ * @author Daniel Vizzini
+ */
+public abstract class ExpActivityAbstract extends Activity {
+
+	/** TAG is an identifier for the log. */
+	public static final String TAG = "XLab - ExpActivitySuperclass";
+	
+	/** decimal FORMATTER */
+	public static final DecimalFormat FORMATTER = new DecimalFormat("###,###,##0.00");
+
+	/** application context for Shared Preferences */
+	protected Context context;
+	
+	/** application object for calling methods with a UI thread */
+	protected Activity activity;
+	
+	/** unique identifier of Experiment */
+	protected int expId;
+	
+	/** Called when the activity is first created. */
+	protected void initialize(Activity activity) {
+		
+		super.onStart();
+		
+		Log.d(TAG, "In initialize() method");
+
+		context = getApplicationContext();
+		
+		this.activity = activity;
+		
+		expId = (int) getIntent().getExtras().getInt("expId");
+		Log.d(TAG, "expId = " + expId);
+		
+	}
+
+	/**
+	 * Displays message at the conclusion of session (e.g. to inform the subject what has been won) and cleans the Result's shared preferences from the phone
+	 * @param exp Experiment object associated with this activity
+	 * @param dialogMessage message for dialog box
+	 */
+	protected void cleanUpExp(final ExperimentAbstract exp, String dialogMessage) {		
+		
+		AlertDialog.Builder builder = new AlertDialog.Builder(activity);				
+		builder.setMessage(dialogMessage);
+		builder.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				cleanUpExp(exp);
+			}
+		});
+	
+		AlertDialog alert = builder.create();
+		alert.show();
+		
+	}
+	
+	/**
+	 * Cleans the Result's SharedPreferences from the phone
+	 * @param exp Experiment object associated with this activity
+	 */
+	protected void cleanUpExp(ExperimentAbstract exp) {		
+		
+		if (exp.isDone()) {
+			Log.d(TAG, "Calling Refresh experiments with hit order");
+			new RefreshExperiments(context, activity, false, exp).execute();
+		} else {
+			Log.d(TAG, "Calling Refresh experiments without hit order");
+			new RefreshExperiments(context, activity, false).execute();			
+		}
+		
+	}
+	
+    @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.superclassmenu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.instructions) {
+            instructionsSelected();           
+        }
+        return false;
+    }
+    
+    public abstract void instructionsSelected ();        
+}

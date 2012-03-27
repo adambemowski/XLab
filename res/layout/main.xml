@@ -11,6 +11,7 @@
 		android:layout_height="wrap_content"
 	   	android:layout_gravity="center_vertical"
 	   	android:padding="10dp"
+	   	android:contentDescription="experiment icon"
 		/>
  
 	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"

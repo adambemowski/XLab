@@ -2,7 +2,6 @@ package edu.berkeley.xlab;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import edu.berkeley.xlab.constants.Constants;
@@ -26,7 +25,6 @@ import android.util.Log;
 
 public class BackgroundService extends Service {
 	
-	//TODO:GET THIS CLASS IN A DIFFERNT PROCESS WITH SOME SORT OF LOCAL STORE.
 	String username;
 	
 	private LocationManager locationManager;
@@ -57,8 +55,6 @@ public class BackgroundService extends Service {
 	public enum UploadStatus {NO_ATTEMPT, SUCCESS, FAIL};
 	UploadStatus uploadStatus = UploadStatus.NO_ATTEMPT;
 	public static final int DOWNLOAD_INTERVAL = 15 * 60 * 1000; //In milliseconds
-	//TODO: Make this changeable in settings
-	public static final long SENSOR_CHECK_INTERVAL = 0;//5 * 60 * 1000;
 	public static final long GPS_MIN_ON = 5 * 1000;
 	public static final long GPS_MAX_ON = 60 * 1000;
 	public static final long GPS_DESIRED_ACCURACY = 100;//In meters. Stops GPS if achieved
@@ -98,68 +94,14 @@ public class BackgroundService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		
 		super.onStartCommand(intent, flags, startId);
-		
-		
+				
 		if (gpsListener == null) {
 			gpsListener = new GPSListener();
 			gpsListener.start();
 		}
 		
-		/**
-		 * Periodically takes GPS Readings
-		 * 
-		 * @author dvizzini
-		 */
-		//DV: DO NOT DELETE. SENSOR_CHECK_INTERVAL will not be zero
-/*		if (SENSOR_CHECK_INTERVAL != 0) {
-			ScheduledThreadPoolExecutor locationTimer= new ScheduledThreadPoolExecutor(5);//5 threads? 2? Anyone have any idea?
-			locationTimer.scheduleAtFixedRate(new Runnable() {
-				
-				private long interval = System.currentTimeMillis() - gpsListener.getLastSwitchedOn();
-				
-				@Override
-				public void run() {
-					if( interval > SENSOR_CHECK_INTERVAL ) {
-						if( !gpsListener.isRunning() ) {
-							gpsListener.start();
-						}
-					} else {
-						Location location = gpsListener.getLocation();
-						if (location.hasAccuracy() && 
-								(location.getAccuracy() <= GPS_DESIRED_ACCURACY) && 
-								(location.getTime() >= gpsListener.getLastSwitchedOn())) {
-							gpsListener.stop();
-							//Perform X-Lab checks
-							doXLabChecks(location.getLatitude(), location.getLongitude(),location.getAccuracy(), location.getSpeed(), location.getProvider());						
-						}
-					}				
-				}
-				
-			},0, 1000,TimeUnit.MILLISECONDS );  			
-		}
-*/		
-		
-		/**
-		 * Periodically uploads data
-		 * 
-		 * @author dvizzini
-		 */
-		//TODO: Implement this: http://android-developers.blogspot.com/2010/05/android-cloud-to-device-messaging.html
-		/*DV: Commenting out for demo (and perhaps forever). Will get called at startup.
-		ScheduledThreadPoolExecutor downloader= new ScheduledThreadPoolExecutor(2);//5 threads? 2? Anyone have any idea?
-		downloader.scheduleAtFixedRate(new Runnable() {
-			
-			@Override
-			public void run() {
-				Thread t = new Thread( new FetchXLabTask() );
-				t.start();
-			}
-		},DOWNLOAD_INTERVAL, DOWNLOAD_INTERVAL,TimeUnit.MILLISECONDS );
-		*/
-		
-		// We want this service to continue running until it is explicitly
-	    // stopped, so return sticky.
 		return START_STICKY;		
+		
 	}
 
 	@Override
@@ -173,7 +115,7 @@ public class BackgroundService extends Service {
 		gpsListener.stop();
 	}
 
-	private class GPSListener implements LocationListener {
+	public class GPSListener implements LocationListener {
 		private boolean isRunning;
 		private long lastSwitchedOn;
 		
@@ -197,7 +139,7 @@ public class BackgroundService extends Service {
 			Log.d(TAG, "New location: " + location.getLatitude() + location.getLongitude());
 			lastLat = location.getLatitude();
 			lastLon = location.getLatitude();
-			if (location.hasAccuracy() && (SENSOR_CHECK_INTERVAL == 0)) {
+			if (location.hasAccuracy()) {
 				//Perform X-Lab checks
 				doXLabChecks(location.getLatitude(), location.getLongitude(),location.getAccuracy());						
 			}
@@ -233,7 +175,7 @@ public class BackgroundService extends Service {
 		}
 	}
 		
-	private String getLocationDataAsString(Location l) {
+	public String getLocationDataAsString(Location l) {
 		//Format - identifier, platform, lat, lon, gps_time, sample_time, velocity, 
 		//	haccuracy, vaccuracy, altitude, course, hdop, vdop, service_provider, has_speed, 
 		//  has_accuracy, has_velocity, has_altitude, has_course, satellites_in_view, satellite_count, 
@@ -250,7 +192,6 @@ public class BackgroundService extends Service {
 		elems.add(l.getLatitude()); //lat
 		elems.add(l.getLongitude()); //lon
 		
-		//TODO: These should be in milli seconds for higher precision
 		elems.add(sampleTime / 1000); //gps_time
 		elems.add(l.getTime() / 1000); //sample_time
 		
@@ -294,7 +235,7 @@ public class BackgroundService extends Service {
 	}
 	
 	//Copy sensor code here
-	private static final long MIN_TIME_BETWEEN_ALERTS = 10 * 60 * 1000;//TODO: Change to something reasonable
+	private static final long MIN_TIME_BETWEEN_ALERTS = 10 * 60 * 1000;
 	private ConcurrentHashMap<Integer, Long> lastTime = new ConcurrentHashMap<Integer, Long>();
 
 	/**
@@ -306,10 +247,10 @@ public class BackgroundService extends Service {
 	private void doXLabChecks(double lat, double lon, float accuracy) {
 
 		Log.d(TAG,"In doXLabChecks");
-		String[] expNames = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
+		String[] expNames = context.getSharedPreferences(ExperimentAbstract.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
 		for(String expName : expNames) {
 
-			Experiment exp;
+			ExperimentAbstract exp;
 			SharedPreferences expSP = context.getSharedPreferences(expName, Context.MODE_PRIVATE);
 			
 			if (expSP.getInt("typeId", -1) == Constants.XLAB_TQ_EXP) {				

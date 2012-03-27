@@ -1,6 +1,6 @@
 package edu.berkeley.xlab;
 
-import edu.berkeley.xlab.xlab_objects.Experiment;
+import edu.berkeley.xlab.xlab_objects.ExperimentAbstract;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -19,10 +19,10 @@ public class Notifier implements Runnable {
 
 	private NotificationManager notificationManager;
 	private Context context;
-	private Experiment exp;
+	private ExperimentAbstract exp;
 	private Class<?> activity;
 	
-	public Notifier(Context context, NotificationManager notificationManager, Experiment exp) {
+	public Notifier(Context context, NotificationManager notificationManager, ExperimentAbstract exp) {
 		Log.d(TAG,"In UploadXlabBL constructor");
 		this.context = context;
 		this.notificationManager = notificationManager;

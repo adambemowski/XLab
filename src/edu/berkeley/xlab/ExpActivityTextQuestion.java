@@ -1,8 +1,8 @@
 package edu.berkeley.xlab;
 
-import edu.berkeley.xlab.xlab_objects.Experiment;
+import edu.berkeley.xlab.xlab_objects.ExperimentAbstract;
 import edu.berkeley.xlab.xlab_objects.ExperimentTextQuestion;
-import edu.berkeley.xlab.xlab_objects.ResponseTQ;
+import edu.berkeley.xlab.xlab_objects.ResponseTextQuestion;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -16,7 +16,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.EditText;
 
-public class ExpActivityTextQuestion extends ExpActivitySuperclass implements OnClickListener {
+public class ExpActivityTextQuestion extends ExpActivityAbstract implements OnClickListener {
 	
 	/** TAG is an identifier for the log. */
 	public static final String TAG = "XLab-TQ";
@@ -39,9 +39,9 @@ public class ExpActivityTextQuestion extends ExpActivitySuperclass implements On
 		
 		initialize(this);
 		
-		exp = new ExperimentTextQuestion(context, context.getSharedPreferences(Experiment.makeSPName(extras.getInt("expId")), Context.MODE_PRIVATE));
+		exp = new ExperimentTextQuestion(context, context.getSharedPreferences(ExperimentAbstract.makeSPName(extras.getInt("expId")), Context.MODE_PRIVATE));
 
-		setContentView(R.layout.text_question);
+		setContentView(R.layout.experiment_text_question);
 		
 		this.question = exp.getTitle();
 		
@@ -92,7 +92,7 @@ public class ExpActivityTextQuestion extends ExpActivitySuperclass implements On
 							
 							exp.makeDone(context);
 							
-							new ResponseTQ(context, expId, answer);	
+							new ResponseTextQuestion(context, expId, answer);	
 							cleanUpExp(exp);
 							
 						}

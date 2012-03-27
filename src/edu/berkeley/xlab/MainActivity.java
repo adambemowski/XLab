@@ -1,6 +1,5 @@
 package edu.berkeley.xlab;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -55,7 +54,7 @@ public class MainActivity extends ListActivity {
 	@Override
 	public void onResume() {
 		super.onResume();
-		expNames = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
+		expNames = context.getSharedPreferences(ExperimentAbstract.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
 		populate();		
 	}
 	
@@ -96,9 +95,9 @@ public class MainActivity extends ListActivity {
 					item.setTitle(getString(R.string.menu_turnoff));
 					return true;
 				}
-			case R.id.deleteSPs:
+			case R.id.clearSPs:
 				
-				String[] expNames = context.getSharedPreferences(Experiment.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
+				String[] expNames = context.getSharedPreferences(ExperimentAbstract.EXP_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
 				
 				if (!expNames[0].equals("")) {
 					SharedPreferences sharedPreferences;
@@ -106,26 +105,29 @@ public class MainActivity extends ListActivity {
 						sharedPreferences = context.getSharedPreferences(expName, Context.MODE_PRIVATE);
 						switch(sharedPreferences.getInt("typeId", -1)) {
 						case Constants.XLAB_TQ_EXP:
-							new ExperimentTextQuestion(context,sharedPreferences).deleteSharedPreferences(context);
+							new ExperimentTextQuestion(context,sharedPreferences).clearSharedPreferences(context);
 							break;
 						case Constants.XLAB_BL_EXP:
-							new ExperimentBudgetLine(context,sharedPreferences).deleteSharedPreferences(context);
+							new ExperimentBudgetLine(context,sharedPreferences).clearSharedPreferences(context);
 							break;
 						}
 					}
 				}		
 
-				new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + Experiment.EXP_LIST + ".xml").delete();//unnecessary, but good housekeeping
+				//new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + ExperimentAbstract.EXP_LIST + ".xml").delete();//unnecessary, but good housekeeping
+				context.getSharedPreferences(ExperimentAbstract.EXP_LIST, Context.MODE_PRIVATE).edit().clear();//unnecessary, but good housekeeping
 
-				String[] responseNames = context.getSharedPreferences(Response.RESPONSES_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
+				String[] responseNames = context.getSharedPreferences(ResponseAbstract.RESPONSES_LIST, Context.MODE_PRIVATE).getString("SharedPreferences", "").split(",");
 				
 				if (!responseNames[0].equals("")) {
 					for (String responseName : responseNames) {
-						new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + responseName + ".xml").delete();		
+						//new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + responseName + ".xml").delete();
+						context.getSharedPreferences(responseName, Context.MODE_PRIVATE).edit().clear();
 					}
 				}		
 
-				new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + Response.RESPONSES_LIST + ".xml").delete();
+				//new File("/data/data/" + context.getPackageName() + "/shared_prefs/" + ResponseAbstract.RESPONSES_LIST + ".xml").delete();
+				context.getSharedPreferences(ResponseAbstract.RESPONSES_LIST, Context.MODE_PRIVATE).edit().clear();
 
 				new RefreshExperiments(context, this, false).execute();			
 
@@ -142,9 +144,7 @@ public class MainActivity extends ListActivity {
 
 	/**
 	* populate
-	*
-	* @author Daniel Vizzini
-	* 
+	*  
 	* Populates ListAcitvity with Experiments
 	* Big up http://www.tutomobile.fr/personnaliser-une-listview-tutoriel-android-n%C2%B07/04/07/2010/ 
 	*/
@@ -166,9 +166,9 @@ public class MainActivity extends ListActivity {
 			    map.put("title", sharedPreferences.getString("title", ""));
 			    
 			    String[] sessionNames = sharedPreferences.getString("sessions", "").split(",");
-			    String[] lineNames = context.getSharedPreferences(sessionNames[0], Context.MODE_PRIVATE).getString("lines", "").split(",");
-			    int unitsLeft = (sessionNames.length - 1 - sharedPreferences.getInt("currSession", 0)) * lineNames.length + lineNames.length -sharedPreferences.getInt("currLine", 0);
-			    map.put("location", (sharedPreferences.getInt("typeId", 0) != 1) ? sharedPreferences.getString("location", "") : unitsLeft + ((unitsLeft == 1) ? " line left" : " lines left"));
+			    String[] roundNames = context.getSharedPreferences(sessionNames[0], Context.MODE_PRIVATE).getString("rounds", "").split(",");
+			    int unitsLeft = (sessionNames.length - 1 - sharedPreferences.getInt("currSession", 0)) * roundNames.length + roundNames.length - sharedPreferences.getInt("currRound", 0);
+			    map.put("location", (sharedPreferences.getInt("typeId", 0) != 1) ? sharedPreferences.getString("location", "") : unitsLeft + ((unitsLeft == 1) ? " round" : " rounds") + " left");
 			    switch(sharedPreferences.getInt("typeId", Constants.XLAB_TQ_EXP)) {
 			    case Constants.XLAB_TQ_EXP:
 			    	map.put("img", String.valueOf(R.drawable.ic_tq));
@@ -199,19 +199,30 @@ public class MainActivity extends ListActivity {
 				
 				if (expIds[position] != 0) {
 					
-					SharedPreferences clickedSP = context.getSharedPreferences(Experiment.makeSPName(expIds[position]), Context.MODE_PRIVATE);
+					SharedPreferences clickedSP = context.getSharedPreferences(ExperimentAbstract.makeSPName(expIds[position]), Context.MODE_PRIVATE);
 					Class<?> activity;
 					int typeId = clickedSP.getInt("typeId", Constants.XLAB_BL_EXP);
 					
-				    if (typeId == Constants.XLAB_BL_EXP) {
+				    if (typeId == Constants.XLAB_TQ_EXP) {
 				    	activity = ExpActivityBudgetLine.class;
 				    } else {
-				    	activity = ExpActivityTextQuestion.class;
+				    	Log.d(TAG,"Declaring BL Activity: currSession: " + clickedSP.getInt("currSession", -1) + ", currRound: " + clickedSP.getInt("currRound", -1));
+						if (clickedSP.getInt("currSession", -1) == 0 && clickedSP.getInt("currRound", -1) == 0) {
+					    	activity = InstructionsActivityBudgetLine.class;
+						} else {
+					    	activity = ExpActivityBudgetLine.class;							
+						}
 				    }
 					
 					Intent intent = new Intent(context, activity);
+					
 					intent.putExtra("expId", expIds[position]);
-					Log.d(TAG, "Experiment.makeSPName(expIds[position]: " + Experiment.makeSPName(expIds[position]));
+					
+					if (clickedSP.getInt("currSession", -1) == 0 && clickedSP.getInt("currRound", -1) == 0) {
+						intent.putExtra("firstRound", true);//will return false if it does not exist
+					}
+					
+					Log.d(TAG, "Experiment.makeSPName(expIds[position]: " + ExperimentAbstract.makeSPName(expIds[position]));
 					long nextTime = clickedSP.getLong("nextTime", 2000000000000L);//default timestamp is in the year 2033
 										
 					if (typeId == Constants.XLAB_BL_EXP) {
@@ -248,7 +259,7 @@ public class MainActivity extends ListActivity {
 		Log.d(TAG,"In doXLabChecks");
 		for(String expName : expNames) {
 
-			Experiment exp;
+			ExperimentAbstract exp;
 			SharedPreferences expSP = context.getSharedPreferences(expName, Context.MODE_PRIVATE);
 			
 			if (expSP.getInt("typeId", -1) == Constants.XLAB_TQ_EXP) {				
