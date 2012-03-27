@@ -45,8 +45,8 @@ public class InstructionsActivityBudgetLine extends Activity implements OnClickL
     	findViewById(R.id.procede_button).setOnClickListener(this);
         
         //add all other conditions here and then set text to appropriate string in Values/Strings.xml
-    	((TextView) findViewById(R.id.text_notice)).setText(
-    			getString(R.string.budget_line_instruction_notice));
+    	((TextView) findViewById(R.id.text_top)).setText(
+    			getString(R.string.budget_line_instruction_top));
 
 		if (probabilistic) {
         	((TextView) findViewById(R.id.text_main_block_0)).setText(
@@ -116,6 +116,9 @@ public class InstructionsActivityBudgetLine extends Activity implements OnClickL
         ((TextView) findViewById(R.id.text_confidentiality_block_0)).setText(
     			getString(R.string.budget_line_instruction_confidentiality_00));
 
+    	((TextView) findViewById(R.id.text_bottom)).setText(
+    			getString(R.string.budget_line_instruction_bottom));
+
     }   
 
     private String _getSessionsAndRoundAsText() {
@@ -129,12 +132,12 @@ public class InstructionsActivityBudgetLine extends Activity implements OnClickL
     private String _getRewardAsText() {
     	return (!currency.equalsIgnoreCase("-") ? "money is " : exp.getX_label() + " and " + exp.getY_label() + " are");
     }
-
+    
 	@Override
 	public void onClick(View v) {
 		// TODO Auto-generated method stub
 		Log.d(TAG,"extras.getBoolean(\"firstRound\"): " + extras.getBoolean("firstRound"));
-		if (v.getId() == R.id.select_button) {
+		if (v.getId() == R.id.procede_button) {
 			if (extras.getBoolean("firstRound")) {
 				Log.d(TAG,"expId: " + expId);
 				Intent intent = new Intent(getApplicationContext(), ExpActivityBudgetLine.class);
@@ -146,5 +149,4 @@ public class InstructionsActivityBudgetLine extends Activity implements OnClickL
 			}
 		}		
 	}
-
 }

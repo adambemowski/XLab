@@ -35,7 +35,6 @@
 			android:id="@+id/explanation"
 	        android:layout_width="fill_parent" 
 	        android:layout_height="wrap_content" 
-	        android:text="Please wait for explanation to load."
 	        android:layout_weight="1" />
     	</TableRow>
     </TableLayout>
