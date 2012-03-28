@@ -137,6 +137,7 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 		seekBar = (SeekBar) findViewById(R.id.slider);
 		seekBar.setOnSeekBarChangeListener(this);
 		explanation = (TextView) findViewById(R.id.explanation);
+		explanation.setTextColor(Color.BLACK);
 
 		exp = new ExperimentBudgetLine(context, sharedPreferences);
 		currency = exp.getCurrency();
@@ -219,8 +220,13 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 		TextView title = (TextView) findViewById(R.id.title);
 
 		title.setText(exp.getTitle());
-		ExpActivityBudgetLineDrawView.setLabels(exp.getX_label(), exp.getY_label(),
-				exp.getX_units(), exp.getY_units(), exp.getCurrency());
+		if (probabilistic) {
+		    ExpActivityBudgetLineDrawView.setLabels(exp.getX_label(), exp.getY_label(),
+				exp.getX_units(), exp.getY_units(), exp.getCurrency(), exp.getProb_x(), true);
+		} else {
+		    ExpActivityBudgetLineDrawView.setLabels(exp.getX_label(), exp.getY_label(),
+                exp.getX_units(), exp.getY_units(), exp.getCurrency(), 0, false);
+		}
 
 		saveStateBoolean = true;
 		roundDone = false;
@@ -534,7 +540,7 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 	 *         SeekBar
 	 */
 	public static float getY() {
-		return (-slope * ((float) progress * x / (float) seekBar.getMax()) + y);
+		return Math.abs((-slope * ((float) progress * x / (float) seekBar.getMax()) + y));
 		
 	}
 
