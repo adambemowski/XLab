@@ -77,12 +77,12 @@ public class ExpActivityBudgetLineDrawView extends View {
         paint.setTextSize(23);
         canvas.rotate(-90);
         //TODO: Make currency support more robust and remove ad-hoc shakel support
-        canvas.drawText((currency.equalsIgnoreCase("-") ? (yLabel + ": ") : (currency.equalsIgnoreCase("\u20AA") ? "" : currency)) + formatter.format(ExpActivityBudgetLine.getY()) + ((currency == "-") ? (" " + yUnit) : (currency.equalsIgnoreCase("\u20AA") ? " \u20AA" : "")), -300, 20, paint);
+        canvas.drawText((currency.equalsIgnoreCase("-") ? (yLabel + ": ") : (currency.equalsIgnoreCase("\u20AA") ? "" : currency)) + formatter.format(ExpActivityBudgetLine.getY()) + (currency.equalsIgnoreCase("-") ? (" " + yUnit) : (currency.equalsIgnoreCase("\u20AA") ? " \u20AA" : "")), -300, 20, paint);
         canvas.drawText((probabilistic ? Utils.FORMATTER_PERCENT.format(1 - probX) : ""), -80, 20, paint);
         canvas.rotate(90);
         //TODO: Make currency support more robust and remove ad-hoc shakel support
-        canvas.drawText((currency.equalsIgnoreCase("-") ? (xLabel + ": ") : (currency.equalsIgnoreCase("\u20AA") ? "" : currency)) + formatter.format(ExpActivityBudgetLine.getX()) + ((currency == "-") ? (" " + xUnit) : (currency.equalsIgnoreCase("\u20AA") ? " \u20AA" : "")), 140, 430, paint);
-        canvas.drawText((probabilistic ? Utils.FORMATTER_PERCENT.format(probX) : ""), -80, 20, paint);
+        canvas.drawText((currency.equalsIgnoreCase("-") ? (xLabel + ": ") : (currency.equalsIgnoreCase("\u20AA") ? "" : currency)) + formatter.format(ExpActivityBudgetLine.getX()) + (currency.equalsIgnoreCase("-") ? (" " + xUnit) : (currency.equalsIgnoreCase("\u20AA") ? " \u20AA" : "")), 140, 430, paint);
+        canvas.drawText((probabilistic ? Utils.FORMATTER_PERCENT.format(probX) : ""), 360, 430, paint);
         
         //draw the budget line.
         paint.setColor(Color.RED);

@@ -156,10 +156,7 @@ public class Communicator {
 	}
 
 	/**
-	 * Creates handler to handle message
-	 * 
-	 * @author Daniel Vizzini
-	 * 
+	 * Creates handler to handle message 
 	 */
 	final class UIHandler extends Handler {
 
