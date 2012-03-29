@@ -86,7 +86,7 @@ public class InstructionsActivityBudgetLine extends Activity implements OnClickL
 					getString(R.string.budget_line_instruction_main_prob_09) +
 					Utils.FORMATTER_PERCENT.format(1 - exp.getProb_x()) +
 					getString(R.string.budget_line_instruction_main_prob_10) +
-        			_getSessionsAndRoundAsText() +
+        			_getSessionsAndRoundAsText2() +
 					getString(R.string.budget_line_instruction_main_all_11) +
 					_getSessionAsText() + 
 					getString(R.string.budget_line_instruction_main_all_12));
@@ -94,7 +94,7 @@ public class InstructionsActivityBudgetLine extends Activity implements OnClickL
         	((TextView) findViewById(R.id.text_main_block_2)).setText(
 					getString(R.string.budget_line_instruction_main_nonprob_08) +
 					getString(R.string.budget_line_instruction_main_nonprob_10) +
-        			_getSessionsAndRoundAsText() +
+        			_getSessionsAndRoundAsText2() +
 					getString(R.string.budget_line_instruction_main_all_11) +
 					_getSessionAsText() + 
 					getString(R.string.budget_line_instruction_main_all_12));
@@ -124,13 +124,17 @@ public class InstructionsActivityBudgetLine extends Activity implements OnClickL
     private String _getSessionsAndRoundAsText() {
     	return numSessions + " session" + (numSessions > 1 ? "s" : "") +  " of " + numRounds + " round" + (numRounds > 1 ? "s" : "");
     }
+    
+    private String _getSessionsAndRoundAsText2() {
+        return numSessions + " session" + (numSessions > 1 ? "s" : "") +  " of " + numRounds + " round" + (numRounds > 1 ? "s" : "") + (numSessions > 1 ? " are" : " is");
+    }
 
     private String _getSessionAsText() {
     	return (numSessions != 1 ? "each session" : "the experiment");
     }
 
     private String _getRewardAsText() {
-    	return (!currency.equalsIgnoreCase("-") ? "money is " : exp.getX_label() + " and " + exp.getY_label() + " are");
+    	return (!currency.equalsIgnoreCase("-") ? "money is" : exp.getX_label() + " and " + exp.getY_label() + " are");
     }
     
 	@Override

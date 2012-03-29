@@ -2,6 +2,8 @@ package edu.berkeley.xlab;
 
 import java.text.DecimalFormat;
 
+import edu.berkeley.xlab.util.Utils;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -53,6 +55,11 @@ public class ExpActivityBudgetLineDrawView extends View {
     private static String xUnit;
     
     private static String yUnit;
+    
+    /** probX is the probability that the x axis is chosen */
+    private static float probX;
+    /** a boolean signifying whether the experiment displayed is probabilistic or not */
+    private static boolean probabilistic;
 
     @Override
     public void onDraw(Canvas canvas) {
@@ -71,9 +78,11 @@ public class ExpActivityBudgetLineDrawView extends View {
         canvas.rotate(-90);
         //TODO: Make currency support more robust and remove ad-hoc shakel support
         canvas.drawText((currency.equalsIgnoreCase("-") ? (yLabel + ": ") : (currency.equalsIgnoreCase("\u20AA") ? "" : currency)) + formatter.format(ExpActivityBudgetLine.getY()) + ((currency == "-") ? (" " + yUnit) : (currency.equalsIgnoreCase("\u20AA") ? " \u20AA" : "")), -300, 20, paint);
+        canvas.drawText((probabilistic ? Utils.FORMATTER_PERCENT.format(1 - probX) : ""), -80, 20, paint);
         canvas.rotate(90);
         //TODO: Make currency support more robust and remove ad-hoc shakel support
         canvas.drawText((currency.equalsIgnoreCase("-") ? (xLabel + ": ") : (currency.equalsIgnoreCase("\u20AA") ? "" : currency)) + formatter.format(ExpActivityBudgetLine.getX()) + ((currency == "-") ? (" " + xUnit) : (currency.equalsIgnoreCase("\u20AA") ? " \u20AA" : "")), 140, 430, paint);
+        canvas.drawText((probabilistic ? Utils.FORMATTER_PERCENT.format(probX) : ""), -80, 20, paint);
         
         //draw the budget line.
         paint.setColor(Color.RED);
@@ -84,15 +93,17 @@ public class ExpActivityBudgetLineDrawView extends View {
         canvas.drawCircle(dotX, dotY, 7, paint);
     }
     
-    public static void setLabels(String x, String y, String xCurrency, String yCurrency, String currencyInput) {
+    /** sets the labels of the current drawView. */
+    public static void setLabels(String x, String y, String xCurrency, String yCurrency, String currencyInput, float xProb, boolean prob) {
         xLabel = x;
         yLabel = y;
         xUnit = xCurrency;
         yUnit = yCurrency;
         currency = currencyInput;
-        
+        probX = xProb;  
+        probabilistic = prob;
     }
-
+    
     /** Sets the x and y value of the dot.
      * @param x1 the new x value of the dot
      */

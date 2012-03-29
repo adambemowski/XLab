@@ -31,7 +31,7 @@ public class BootUpReceiver extends BroadcastReceiver{
 					break;
 				case Constants.XLAB_BL_EXP:
 					Log.d(TAG, "About to create bl " + expName + " object from SP");
-					Communicator.createBudgetLineAndTimer(context, context.getSharedPreferences(expName,Context.MODE_PRIVATE));
+					Communicator.createBudgetLineAndTimerFromSharedPrefereces(context, context.getSharedPreferences(expName,Context.MODE_PRIVATE));
 					break;
 				}
 			}
