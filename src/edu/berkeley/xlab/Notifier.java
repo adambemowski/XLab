@@ -10,8 +10,6 @@ import android.util.Log;
 
 /**
  * Upload XLab task status to the server 
- * 
- * @author Daniel Vizzini
  */
 public class Notifier implements Runnable {
 	/* for log */

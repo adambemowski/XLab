@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="edu.berkeley.xlab"
       android:versionCode="1"
-      android:versionName="0.2">
+      android:versionName="0.3.0">
     <uses-sdk android:minSdkVersion="7" />
     
     <uses-permission android:name="android.permission.INTERNET" />
@@ -65,10 +65,9 @@
         </activity>
         
         <service android:name=".BackgroundService"
-        		 android:exported="false">
-        		 <!-- 
-        		 android:process=":xlab_service">
-        		 -->
+        		 android:exported="false"
+        		 android:process=":xlab_service"
+        		 >
         </service>
         
 		<receiver android:enabled="true" android:name=".BootUpReceiver" android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
@@ -78,8 +77,11 @@
 			</intent-filter>
 		</receiver>
 		
-		<receiver  android:process=":remote" android:name="AlarmReceiver"/>
-		
+		<receiver 
+		    android:name="AlarmReceiver"
+			android:process=":remote"
+		    />
+				
      </application>
     
 </manifest>

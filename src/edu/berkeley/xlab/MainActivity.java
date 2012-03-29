@@ -47,7 +47,7 @@ public class MainActivity extends ListActivity {
 		super.onCreate(bundle);
 		Log.d(TAG, "In MainActivity -- OnCreate");
 		context = getApplicationContext();
-		new RefreshExperiments(context, LIST_ACTIVITY, true).execute();
+		new RefreshExperiments(context, LIST_ACTIVITY).execute();
 		
 	}
 	
@@ -77,7 +77,7 @@ public class MainActivity extends ListActivity {
 		// Handle item selection
 		switch (item.getItemId()) {
 			case R.id.download:
-				new RefreshExperiments(getApplicationContext(), MainActivity.this, true).execute();
+				new RefreshExperiments(getApplicationContext(), MainActivity.this).execute();
 				return true;
 			case R.id.gpsToggle:
 				ComponentName comp = new ComponentName(context.getPackageName(),BackgroundService.class.getName());
@@ -167,6 +167,8 @@ public class MainActivity extends ListActivity {
 			    
 			    String[] sessionNames = sharedPreferences.getString("sessions", "").split(",");
 			    String[] roundNames = context.getSharedPreferences(sessionNames[0], Context.MODE_PRIVATE).getString("rounds", "").split(",");
+			    Log.d(TAG,"currSession for rounds left: " + sharedPreferences.getInt("currSession", 0));
+			    Log.d(TAG,"currRound for rounds left: " + sharedPreferences.getInt("currRound", 0));
 			    int unitsLeft = (sessionNames.length - 1 - sharedPreferences.getInt("currSession", 0)) * roundNames.length + roundNames.length - sharedPreferences.getInt("currRound", 0);
 			    map.put("location", (sharedPreferences.getInt("typeId", 0) != 1) ? sharedPreferences.getString("location", "") : unitsLeft + ((unitsLeft == 1) ? " round" : " rounds") + " left");
 			    switch(sharedPreferences.getInt("typeId", Constants.XLAB_TQ_EXP)) {
@@ -200,19 +202,22 @@ public class MainActivity extends ListActivity {
 				if (expIds[position] != 0) {
 					
 					SharedPreferences clickedSP = context.getSharedPreferences(ExperimentAbstract.makeSPName(expIds[position]), Context.MODE_PRIVATE);
-					Class<?> activity;
+					Class<?> activity = null;
 					int typeId = clickedSP.getInt("typeId", Constants.XLAB_BL_EXP);
 					
-				    if (typeId == Constants.XLAB_TQ_EXP) {
-				    	activity = ExpActivityBudgetLine.class;
-				    } else {
+					switch(typeId) {
+					case Constants.XLAB_TQ_EXP:
+				    	activity = ExpActivityTextQuestion.class;
+				    	break;
+					case Constants.XLAB_BL_EXP:
 				    	Log.d(TAG,"Declaring BL Activity: currSession: " + clickedSP.getInt("currSession", -1) + ", currRound: " + clickedSP.getInt("currRound", -1));
 						if (clickedSP.getInt("currSession", -1) == 0 && clickedSP.getInt("currRound", -1) == 0) {
 					    	activity = InstructionsActivityBudgetLine.class;
 						} else {
 					    	activity = ExpActivityBudgetLine.class;							
 						}
-				    }
+						break;
+					}
 					
 					Intent intent = new Intent(context, activity);
 					
@@ -245,7 +250,7 @@ public class MainActivity extends ListActivity {
 					}
 					
 				} else {
-					new RefreshExperiments(context, LIST_ACTIVITY, true).execute();
+					new RefreshExperiments(context, LIST_ACTIVITY).execute();
 				}
 				
 		    }

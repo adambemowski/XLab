@@ -23,7 +23,6 @@ import android.util.Log;
 /**
  * Sets times at beginning of experiment within range of dates and day-time combinations.
  * If timerStatus is 2 and subject does not answer within specified time, he or she cannot participate in this segment of the experiment and will receive no reward if applicable
- * @author dvizzini
  */
 public class TimerStatic extends TimerAbstract {
 	
@@ -54,7 +53,7 @@ public class TimerStatic extends TimerAbstract {
 		this.endTime = endTime;
 		this.createAlarmsBool = true;
 		
-		numExpUnits = expBL.getSession(expBL.getCurrSession()).getRounds().length;
+		numExpUnits = expBL.getSession(0).getRounds().length;
 		
 		GregorianCalendar date;
 		
@@ -119,7 +118,7 @@ public class TimerStatic extends TimerAbstract {
 	private void constructFromSharedPreferences(SharedPreferences sharedPreferences) {
 		this.expBL = (ExperimentBudgetLine) exp;
 		this.times = new ArrayList<Long>();
-		this.numExpUnits = expBL.getSession(expBL.getCurrSession()).getRounds().length;
+		this.numExpUnits = expBL.getSession(0).getRounds().length;
 		this.currentTime = System.currentTimeMillis();
 		
 		//get times from sharedPreferences
@@ -171,6 +170,7 @@ public class TimerStatic extends TimerAbstract {
 		if (!expBL.isDone() && this.createAlarmsBool) {
 			setAlarm();			
 		}
+		
 	}
 	
 	@Override
@@ -195,7 +195,8 @@ public class TimerStatic extends TimerAbstract {
 		Log.d(TAG, "creating timer: times.get(" + expBL.getCurrRound() + "): " + times.get(expBL.getCurrRound()));
 		Intent intent = new Intent(context, AlarmReceiver.class);
 		intent.putExtra("expId", expBL.getExpId());
-		intent.putExtra("nextNextTime", times.get(expBL.getCurrRound() + 1) < times.size() ? times.get(expBL.getCurrRound() + 1) : 0L);//so next alarm can be set immediately
+		Log.d(TAG,"times.get(expBL.getCurrRound() + 1): " + times.get(expBL.getCurrRound() + 1));
+		intent.putExtra("nextRound", expBL.getCurrRound() + 1 < times.size() ? expBL.getCurrRound() + 1 : -1);//so next alarm can be set immediately
 		PendingIntent sender = PendingIntent.getBroadcast(context, expBL.getExpId(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		
 		// Get the AlarmManager service

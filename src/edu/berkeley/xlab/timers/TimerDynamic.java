@@ -6,7 +6,6 @@ import edu.berkeley.xlab.AlarmReceiver;
 import edu.berkeley.xlab.constants.Constants;
 import edu.berkeley.xlab.xlab_objects.ExperimentAbstract;
 
-import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -19,7 +18,6 @@ import android.util.Log;
  * Sets times at for next experiment segment within range of dates and day-time combinations.
  * Sets this time after last experiment segment has been completed.
  * If timerStatus is 2 and subject does not answer all experiment segments within specified time, he or she receives nothing.
- * @author dvizzini
  */
 public class TimerDynamic extends TimerAbstract {
 	
@@ -53,7 +51,7 @@ public class TimerDynamic extends TimerAbstract {
 		
 	}
 		
-	public TimerDynamic(Context context, Activity activity, ExperimentAbstract exp, SharedPreferences sharedPreferences) {
+	public TimerDynamic(Context context, ExperimentAbstract exp, SharedPreferences sharedPreferences) {
 		
 		super(context, exp, sharedPreferences.getLong("nextTime", -1L));
 		

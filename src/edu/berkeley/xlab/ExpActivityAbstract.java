@@ -15,8 +15,6 @@ import android.view.MenuItem;
 /**
  * Draw is an activity that controls choosing a point on a line and recording
  * that choice.
- * 
- * @author Daniel Vizzini
  */
 public abstract class ExpActivityAbstract extends Activity {
 
@@ -79,10 +77,10 @@ public abstract class ExpActivityAbstract extends Activity {
 		
 		if (exp.isDone()) {
 			Log.d(TAG, "Calling Refresh experiments with hit order");
-			new RefreshExperiments(context, activity, false, exp).execute();
+			new RefreshExperiments(context, activity, exp).execute();
 		} else {
 			Log.d(TAG, "Calling Refresh experiments without hit order");
-			new RefreshExperiments(context, activity, false).execute();			
+			new RefreshExperiments(context, activity).execute();			
 		}
 		
 	}

@@ -7,9 +7,6 @@ import android.util.Log;
 
 /** 
  * Object that information of chosen point
- * 
- * @author dvizzini
- *
  */
 public class ResponseBudgetLine extends ResponseAbstract {
 

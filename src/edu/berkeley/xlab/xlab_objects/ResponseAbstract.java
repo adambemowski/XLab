@@ -2,9 +2,6 @@ package edu.berkeley.xlab.xlab_objects;
 
 /** 
  * Object that information of chosen point
- * 
- * @author dvizzini
- *
  */
 public abstract class ResponseAbstract extends XLabSuperObject {
 	

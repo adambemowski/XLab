@@ -11,8 +11,8 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 /**
+ * 
  * Abstract class shared by all timers
- * @author dvizzini
  *
  */
 public abstract class TimerAbstract {

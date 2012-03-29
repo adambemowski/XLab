@@ -4,8 +4,8 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
-/** TQInstructions set the instructions text for a Text Question experiment from values/strings.
- * @author John Gunnison
+/** 
+ * TQInstructions set the instructions text for a Text Question experiment from values/strings.
  */
 public class InstructionsActivityTextQuestion extends Activity {
    

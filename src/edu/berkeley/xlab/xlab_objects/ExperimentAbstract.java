@@ -65,7 +65,7 @@ public abstract class ExperimentAbstract extends XLabSuperObject {
 	
 	//** sets done to true */
 	public void makeDone(Context context) {
-		context.getSharedPreferences(getSPName(), Context.MODE_PRIVATE).edit().putString("done","true");
+		context.getSharedPreferences(getSPName(), Context.MODE_PRIVATE).edit().putBoolean("done",true);
 		this.done = true;
 	}
 	

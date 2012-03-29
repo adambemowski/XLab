@@ -8,9 +8,6 @@ import android.util.Log;
 
 /** 
  * Object that conveys information about answer
- * 
- * @author dvizzini
- *
  */
 public class ResponseTextQuestion extends ResponseAbstract {
 

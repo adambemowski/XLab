@@ -38,6 +38,7 @@ public class ExperimentBudgetLine extends ExperimentAbstract {
 	public void nextSession(Context context) {
 		currSession++;
 		if (currSession == sessions.length) {
+			Log.d(TAG,"Timing out");
 			saveState(context, progress);
 			this.makeDone(context);
 		} else {
@@ -129,15 +130,11 @@ public class ExperimentBudgetLine extends ExperimentAbstract {
 	}	
 	
 	public ExperimentBudgetLine(Context context, SharedPreferences sharedPreferences) {
-		this.numSkipped = 0;
-		constructFromSharedPreferences(context, sharedPreferences);
-	}
-	
-	private void constructFromSharedPreferences(Context context, SharedPreferences sharedPreferences) {
 		
 		Log.d(TAG,"In XLabBudgetLineExp SharedPreferences constructor");
 		
 		this.identify();
+		this.numSkipped = 0;
 		this.done = sharedPreferences.getBoolean("done", false);
 		this.expId = sharedPreferences.getInt("expId",-1);
 		this.title = sharedPreferences.getString("title","");
@@ -167,7 +164,6 @@ public class ExperimentBudgetLine extends ExperimentAbstract {
 		Log.d(TAG,"The y min value is  " + y_min);
 		Log.d(TAG,"The y max value is  " + y_max);
 		
-		
 		if (this.timer_status != Constants.TIMER_STATUS_NONE) {
 			this.timer_type = sharedPreferences.getInt("timer_type", -1);
 		}
@@ -179,8 +175,8 @@ public class ExperimentBudgetLine extends ExperimentAbstract {
 			sessions[i] = new SessionBudgetLine(context, context.getSharedPreferences(sessionNames[i], Context.MODE_PRIVATE));
 		}
 
-		this.sessions = sessions;		
-
+		this.sessions = sessions;
+		
 	}
 	
 	/** method of instantiations common to all constructors */
@@ -202,7 +198,7 @@ public class ExperimentBudgetLine extends ExperimentAbstract {
 	 */
 	public void nextRound(Context context) {
 		
-		currRound = (currRound + 1) % sessions[this.getCurrSession()].getRounds().length; 
+		currRound = (currRound + 1) % sessions[0].getRounds().length; 
 		Log.d(TAG,"Current Round: " + currRound);
 		if (currRound == 0) {
 			this.nextSession(context);
@@ -279,6 +275,7 @@ public class ExperimentBudgetLine extends ExperimentAbstract {
 		SharedPreferences sharedPreferences = context.getSharedPreferences(getSPName(), Context.MODE_PRIVATE);
 		SharedPreferences.Editor editor = sharedPreferences.edit();
 		
+		Log.d(TAG,"Saving currSession as: " + editor.putInt("currSession", currSession));
 		editor.putInt("currSession", currSession);
 		editor.putInt("currRound", currRound);
 		editor.putInt("progress", progress);

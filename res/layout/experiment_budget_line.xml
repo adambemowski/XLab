@@ -35,7 +35,8 @@
 			android:id="@+id/explanation"
 	        android:layout_width="fill_parent" 
 	        android:layout_height="wrap_content" 
-	        android:layout_weight="1" />
+	        android:layout_weight="1"
+	        android:textColor="@color/black" />
     	</TableRow>
     </TableLayout>
     <TableLayout 

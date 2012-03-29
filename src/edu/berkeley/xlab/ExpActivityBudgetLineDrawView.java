@@ -9,8 +9,8 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
-/** DrawView controls what is displayed on the graph portion of the screen.
- * @author John Gunnison
+/** 
+ * DrawView controls what is displayed on the graph portion of the screen.
  */
 public class ExpActivityBudgetLineDrawView extends View {
 
@@ -69,9 +69,11 @@ public class ExpActivityBudgetLineDrawView extends View {
         //draw the graph labels.
         paint.setTextSize(23);
         canvas.rotate(-90);
-        canvas.drawText((currency.equalsIgnoreCase("-") ? (yLabel + ": ") : currency) + formatter.format(ExpActivityBudgetLine.getY()) + ((currency == "-") ? (" " + yUnit) : ""), -300, 20, paint);
+        //TODO: Make currency support more robust and remove ad-hoc shakel support
+        canvas.drawText((currency.equalsIgnoreCase("-") ? (yLabel + ": ") : (currency.equalsIgnoreCase("\u20AA") ? "" : currency)) + formatter.format(ExpActivityBudgetLine.getY()) + ((currency == "-") ? (" " + yUnit) : (currency.equalsIgnoreCase("\u20AA") ? " \u20AA" : "")), -300, 20, paint);
         canvas.rotate(90);
-        canvas.drawText((currency.equalsIgnoreCase("-") ? (xLabel + ": ") : currency) + formatter.format(ExpActivityBudgetLine.getX()) + ((currency == "-") ? (" " + xUnit) : ""), 140, 430, paint);
+        //TODO: Make currency support more robust and remove ad-hoc shakel support
+        canvas.drawText((currency.equalsIgnoreCase("-") ? (xLabel + ": ") : (currency.equalsIgnoreCase("\u20AA") ? "" : currency)) + formatter.format(ExpActivityBudgetLine.getX()) + ((currency == "-") ? (" " + xUnit) : (currency.equalsIgnoreCase("\u20AA") ? " \u20AA" : "")), 140, 430, paint);
         
         //draw the budget line.
         paint.setColor(Color.RED);

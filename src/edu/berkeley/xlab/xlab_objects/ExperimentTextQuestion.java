@@ -17,23 +17,6 @@ public class ExperimentTextQuestion extends ExperimentAbstract {
 	/** answer that subject enters into textbox */
 	private String answer; public String getAnswer() {return answer;}
 	
-	public ExperimentTextQuestion(Context context, String line) {
-		
-		this.identify();
-		
-		String[] parts = line.split(",");
-		this.expId = Integer.valueOf(parts[0]);
-		this.location = String.valueOf(parts[1]);
-		this.lat = Float.valueOf(parts[2]);
-		this.lon = Float.valueOf(parts[3]);
-		this.radius = Integer.valueOf(parts[4]);
-		this.title = String.valueOf(parts[5]);
-		this.answer = "";
-
-		this.save(context);
-
-	}
-	
 	public ExperimentTextQuestion(Context context, JSONObject json) {
 		
 		Log.d(TAG,"In XLabTextQuestion JSON constructor");

@@ -49,9 +49,6 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 	/** Timer is the TimerSuperClass object associated with the Experiment. */
 	private TimerAbstract timer;
 
-	/** probabilistic is true if the experiment is probabilistic, false otherwise */
-	private boolean probabilistic;
-
 	/** progress is the current value of the slider. */
 	private static int progress;
 
@@ -73,16 +70,7 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 	/** slope is the value of the slope of the line. */
 	private static float slope;
 
-	/** unique identifier of current session */
-	private int currentSession;
-	
-	/** unique identifier of current line */
-	private int currentRound;
-	
-	/** axis chosen in probabilistic experiment */
-	private char winner;
-	
-	/** true if round is state should be saved in onStop, false otherwise, false otherwise */
+	/** true if round is state should be saved in onStop, false otherwise */
 	private boolean saveStateBoolean;
 	
 	/** true if round is confirmed done. */
@@ -91,11 +79,11 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 	/** true if round is selected in session to be the one from which subject wins goods, false otherwise */
 	private boolean round_chosen_boolean;
 	
+	/** axis chosen in probabilistic experiment */
+	private char winner;
+	
 	/** this activity to pass to methods in other objects */
 	Activity activity;
-	
-	/** the currency character ($, €, or '-', where '-' indicates a non-monetary reward) */
-	String currency;
 	
 	/** the maximum of X_max and Y_max. */
 	float max;
@@ -118,34 +106,17 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 		Intent intent = this.getIntent();
 		Bundle extras = intent.getExtras();
 		
+		//load sp
 		sharedPreferences = context.getSharedPreferences(ExperimentAbstract.makeSPName(extras.getInt("expId")), Context.MODE_PRIVATE);
 		
-		holdThreadRunning = false;
-		cancelHoldThread = false;
-		
-		setContentView(R.layout.experiment_budget_line);
-
-		layout = findViewById(R.id.layout);
-		layout.setBackgroundColor(Color.WHITE);
-
-		findViewById(R.id.left_button).setOnTouchListener(this);
-
-		findViewById(R.id.right_button).setOnTouchListener(this);
-
-		findViewById(R.id.select_button).setOnClickListener(this);
-
-		seekBar = (SeekBar) findViewById(R.id.slider);
-		seekBar.setOnSeekBarChangeListener(this);
-		explanation = (TextView) findViewById(R.id.explanation);
-
+		//get exp
 		exp = new ExperimentBudgetLine(context, sharedPreferences);
-		currency = exp.getCurrency();
 
 		Log.d(TAG,"exp.isDone(): "+ exp.isDone());
 		
 		//in case experiment has timed out
 		if (exp.isDone()) {
-			makeMessageAndClean((currentSession - 1) % exp.getSessions().length, true);									
+			makeMessageAndClean(exp.getCurrSession() - 1, true);									
 		} else if (exp.getTimer_status() != Constants.TIMER_STATUS_NONE) {
 			Log.d(TAG,"exp.getTimer_type() " + exp.getTimer_type() );
 			switch(exp.getTimer_type()) {
@@ -165,7 +136,7 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 				//check if done now
 				if (exp.isDone()) {
 					
-					makeMessageAndClean((currentSession - 1) % exp.getSessions().length, true);						
+					makeMessageAndClean((exp.getCurrSession() - 1), true);						
 					
 				} else {
 					
@@ -203,7 +174,7 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 				break;
 			case Constants.TIMER_DYNAMIC:
 				Log.d(TAG,"About to instantiate TimerDynamic for " + exp.getExpId());
-				timer = new TimerDynamic(context, activity, exp, sharedPreferences);
+				timer = new TimerDynamic(context, exp, sharedPreferences);
 				initialize();
 				break;
 			}
@@ -213,8 +184,25 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 	}
 	
 	private void initialize() {
-		probabilistic = exp.getProbabilistic();
-		Log.d(TAG, "probabilistic = " + probabilistic);
+		holdThreadRunning = false;
+		cancelHoldThread = false;
+		
+		setContentView(R.layout.experiment_budget_line);
+
+		layout = findViewById(R.id.layout);
+		layout.setBackgroundColor(Color.WHITE);
+
+		findViewById(R.id.left_button).setOnTouchListener(this);
+
+		findViewById(R.id.right_button).setOnTouchListener(this);
+
+		findViewById(R.id.select_button).setOnClickListener(this);
+
+		seekBar = (SeekBar) findViewById(R.id.slider);
+		seekBar.setOnSeekBarChangeListener(this);
+		explanation = (TextView) findViewById(R.id.explanation);
+
+		Log.d(TAG, "probabilistic = " + exp.getProbabilistic());
 		
 		TextView title = (TextView) findViewById(R.id.title);
 
@@ -224,8 +212,6 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 
 		saveStateBoolean = true;
 		roundDone = false;
-		currentSession = exp.getCurrSession();
-		currentRound = exp.getCurrRound();
 
 		displayNewRound();
 	
@@ -283,12 +269,12 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 			
 			Log.d(TAG,"In onClick");
 			
-			Log.d(TAG,"currentSession: " + currentSession);
+			Log.d(TAG,"currentSession: " + exp.getCurrSession());
 			Random r = new Random();
-			winner = (probabilistic ? (r.nextDouble() < exp.getProb_x() ? 'x' : 'y') : '-');
-			Log.d(TAG, "exp.getSession(currentSession).getRound_chosen(): " + exp.getSession(currentSession).getRound_chosen());
-			Log.d(TAG, "currentRound: " + currentRound);
-			this.round_chosen_boolean = (exp.getSession(currentSession).getRound_chosen() == currentRound);
+			winner = (exp.getProbabilistic() ? (r.nextDouble() < exp.getProb_x() ? 'x' : 'y') : '-');
+			Log.d(TAG, "exp.getSession(currentSession).getRound_chosen(): " + exp.getSession(exp.getCurrSession()).getRound_chosen());
+			Log.d(TAG, "currentRound: " + exp.getCurrRound());
+			this.round_chosen_boolean = (exp.getSession(exp.getCurrSession()).getRound_chosen() == exp.getCurrRound());
 			Log.d(TAG, "round_chosen_boolean: " + this.round_chosen_boolean);
 			
 			String confirmationMessage = "You have chosen " 
@@ -306,17 +292,13 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 				new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int which) {
 							
-						new ResponseBudgetLine(context, expId, currentSession, currentRound, x, y, getX(), getY(), winner, round_chosen_boolean);
+						new ResponseBudgetLine(context, expId, exp.getCurrSession(), exp.getCurrRound(), x, y, getX(), getY(), winner, round_chosen_boolean);
 	
 						//very important line of code
 						exp.nextRound(context);
-						currentSession = exp.getCurrSession();
-						currentRound = exp.getCurrRound();
 						
-
-						
-						if (currentRound == 0) {
-							makeMessageAndClean((currentSession - 1) % exp.getSessions().length, false);
+						if (exp.getCurrRound() == 0) {
+							makeMessageAndClean((exp.getCurrSession() - 1), false);
 						} else { 
 						    switch (exp.getTimer_status()) {
 						    case Constants.TIMER_STATUS_NONE:  
@@ -504,8 +486,8 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 		
 		String message;
 		
-		if (probabilistic) {
-			message = "If this round is chosen, you will get " + _getXRewardString((float) progress * x / (float) seekBar.getMax()) + " if the x-axis is chosen and " + _getYRewardString(-slope * ((float) progress * x / (float) seekBar.getMax()) + y) + " if the y-axis is chosen.";
+		if (exp.getProbabilistic()) {
+			message = "If this round is chosen, you will get " + _getXRewardString((float) progress * x / (float) seekBar.getMax()) + " with a " + Utils.FORMATTER_PERCENT.format(exp.getProb_x()) + " chance and " + _getYRewardString(-slope * ((float) progress * x / (float) seekBar.getMax()) + y) +  " with a " + Utils.FORMATTER_PERCENT.format(1 - exp.getProb_x()) + " chance.";
 		} else {
 			message = "If this round is chosen, you will get " + _getXRewardString((float) progress * x / (float) seekBar.getMax()) + " and " + _getYRewardString(-slope * ((float) progress * x / (float) seekBar.getMax()) + y) + ".";
 		}
@@ -546,11 +528,11 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 		float[] intercepts = new float[2];
 
 		Log.d(TAG, "Creating new round");
-		x = (float) exp.getSession(currentSession).getRound(currentRound)
+		x = (float) exp.getSession(exp.getCurrSession()).getRound(exp.getCurrRound())
 				.getX_int();
-		y = (float) exp.getSession(currentSession).getRound(currentRound)
+		y = (float) exp.getSession(exp.getCurrSession()).getRound(exp.getCurrRound())
 				.getY_int();
-		if (currency.equalsIgnoreCase("-")) {//cannot directly compare apples and oranges
+		if (exp.getCurrency().equalsIgnoreCase("-")) {//cannot directly compare apples and oranges
             intercepts[0] = (float) (x * seekBar.getMax() / exp.getX_max() * 4);
             intercepts[1] = (float) (y * seekBar.getMax() / exp.getY_max() * 4);            
         } else {//can directly compare dollars and dollars
@@ -583,8 +565,8 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 		saveStateBoolean = false;
 		
 		//Winning round chosen for message that informs subjects of their rewards
-		SharedPreferences winningSharedPreferences = context.getSharedPreferences(ResponseBudgetLine.getSPName(Constants.XLAB_BL_EXP, expId, currentSession - 1, roundChosen), Context.MODE_PRIVATE);
-		Log.d(TAG, "SharedPreferences name: " + ResponseBudgetLine.getSPName(Constants.XLAB_BL_EXP, expId, currentSession - 1, roundChosen));
+		SharedPreferences winningSharedPreferences = context.getSharedPreferences(ResponseBudgetLine.getSPName(Constants.XLAB_BL_EXP, expId, exp.getCurrSession()- 1, roundChosen), Context.MODE_PRIVATE);
+		Log.d(TAG, "SharedPreferences name: " + ResponseBudgetLine.getSPName(Constants.XLAB_BL_EXP, expId, exp.getCurrSession() - 1, roundChosen));
 		Log.d(TAG, "SharedPreferences x_int: " + winningSharedPreferences.getFloat("x_int",(float)-99));
 		
 		
@@ -598,13 +580,16 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 			
 		} else {
 
-			if (probabilistic) {
+			if (exp.getProbabilistic()) {
+				
+				/** chosen axis of chosen round */
+				char winningWinner = winningSharedPreferences.getString("winner", "").charAt(0);
 								
 				message = message
 						+ "round and "
-						+ winner
+						+ winningWinner
 						+ "-axis were chosen.\n\nYou have won "
-						+ ((winner == 'X' || winner == 'x') ? 
+						+ ((winningWinner == 'X' || winningWinner == 'x') ? 
 								_getXRewardString(winningSharedPreferences.getFloat("x_chosen", -1)) : 
 									_getYRewardString(winningSharedPreferences.getFloat("y_chosen", -1))) + ".";
 				
@@ -624,12 +609,16 @@ public class ExpActivityBudgetLine extends ExpActivityAbstract implements SeekBa
 
 	private String _getXRewardString(float x){
 		String xFormatted = FORMATTER.format(x);
-		return currency.equalsIgnoreCase("-") ? (xFormatted + " " + exp.getX_units() + " of " + exp.getX_label()) : (currency + xFormatted);
+		String currency = exp.getCurrency();
+		//TODO: Ad-hoc right-side currency symbol
+		return currency.equalsIgnoreCase("-") ? (xFormatted + " " + exp.getX_units() + " of " + exp.getX_label()) : (currency.equalsIgnoreCase("\u20AA") ? (xFormatted + " " + currency) : (currency + xFormatted));
 	}
 
 	private String _getYRewardString(float y){
 		String yFormatted = FORMATTER.format(y);
-		return currency.equalsIgnoreCase("-") ? (yFormatted + " " + exp.getY_units() + " of " + exp.getY_label()) : (currency + yFormatted);
+		String currency = exp.getCurrency();
+		//TODO: Ad-hoc right-side currency symbol
+		return currency.equalsIgnoreCase("-") ? (yFormatted + " " + exp.getY_units() + " of " + exp.getY_label()) : (currency.equalsIgnoreCase("\u20AA") ? (yFormatted + " " + currency) : (currency + yFormatted));
 	}
 
     @Override
