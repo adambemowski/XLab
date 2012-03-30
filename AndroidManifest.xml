@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="edu.berkeley.xlab"
       android:versionCode="1"
-      android:versionName="0.1">
+      android:versionName="0.3.0">
     <uses-sdk android:minSdkVersion="7" />
     
     <uses-permission android:name="android.permission.INTERNET" />
@@ -15,7 +15,7 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <application android:name=".App" android:icon="@drawable/icon" android:label="@string/app_name" android:debuggable="true">
+    <application android:icon="@drawable/ic_launcher" android:label="@string/app_name" android:debuggable="true">
         
         <activity android:name=".LoginActivity"
                   android:label="@string/app_name"
@@ -30,36 +30,58 @@
         
         <activity android:name=".MainActivity"
                   android:label="@string/app_name"
-                  android:screenOrientation="portrait">
+                  android:screenOrientation="portrait"
+                  android:launchMode="singleTask">
         </activity>
         
-        <activity android:name=".BinaryQuestionActivity"
+        <activity android:name=".ExpActivityTextQuestion"
                   android:label="@string/app_name"
                   android:screenOrientation="portrait">
         </activity>
         
-        <activity android:name=".BudgetLineActivity"
+        <activity android:name=".ExpActivityBudgetLine"
                   android:label="@string/app_name"
                   android:screenOrientation="portrait">
+        </activity>
+        
+        <activity
+            android:name=".InstructionsActivityBudgetLine"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="edu.berkeley.xlab.BLINSTRUCTIONS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        
+        <activity
+            android:name=".InstructionsActivityTextQuestion"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="edu.berkeley.xlab.TQINSTRUCTIONS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
         
         <service android:name=".BackgroundService"
-        		 android:exported="false">
-        		 <!-- 
-        		 android:process=":xlab_service">-->
+        		 android:exported="false"
+        		 android:process=":xlab_service"
+        		 >
         </service>
         
-        <receiver android:name=".AutorunReceiver" 
-			android:enabled="true" 
-			android:exported="false"
-			android:label=".AutorunReceiver">
-			
+		<receiver android:enabled="true" android:name=".BootUpReceiver" android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
 			<intent-filter>
 				<action android:name="android.intent.action.BOOT_COMPLETED" />
+				<category android:name="android.intent.category.DEFAULT" />
 			</intent-filter>
+		</receiver>
 		
-		</receiver>        
-        
-    </application>
+		<receiver 
+		    android:name="AlarmReceiver"
+			android:process=":remote"
+		    />
+				
+     </application>
     
 </manifest>

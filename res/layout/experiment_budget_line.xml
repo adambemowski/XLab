@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:id="@+id/layout"
+    >
+    
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="fill_parent" 
+        android:layout_height="wrap_content" 
+        android:gravity="center"
+        android:textSize="24dp"
+        />
+    <edu.berkeley.xlab.ExpActivityBudgetLineDrawView
+        android:id="@+id/yourID"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="10dp"
+        android:layout_width="fill_parent"
+        android:layout_height="290dp"
+    />
+    <TableLayout 
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content" 
+		android:layout_gravity="center"
+		android:stretchColumns="*"
+		android:layout_marginLeft="5dp"
+		android:layout_marginRight="5dp"
+		android:layout_marginTop="10dp">
+		 
+		<TableRow>
+			<TextView
+			android:id="@+id/explanation"
+	        android:layout_width="fill_parent" 
+	        android:layout_height="wrap_content" 
+	        android:layout_weight="1"
+	        android:textColor="@color/black" />
+    	</TableRow>
+    </TableLayout>
+    <TableLayout 
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content" 
+		android:layout_gravity="center"
+		android:stretchColumns="*"
+		android:layout_marginTop="10dp"
+		>
+	<TableRow>
+		<Button 
+		android:id="@+id/left_button"
+		android:layout_width="0dp" 
+		android:layout_height="40dp" 
+		android:text="&lt;" 
+		android:layout_weight="1.5"/>
+		
+		<SeekBar
+        android:id="@+id/slider"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="50"
+        android:layout_weight="6"
+        />
+		<Button 
+		android:id="@+id/right_button"
+		android:layout_width="0dp" 
+		android:layout_height="40dp" 
+		android:text=">" 
+		android:layout_weight="1.5"/>
+	</TableRow>
+</TableLayout>
+    <Button
+		android:id="@+id/select_button"
+		android:text="Select"
+		android:textSize="17dp"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_gravity="center"
+	/>
+</LinearLayout>

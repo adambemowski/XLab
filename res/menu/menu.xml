@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/download"
-          android:title="@string/menu_download" />
+          android:title="@string/menu_refresh" />
     <item android:id="@+id/gpsToggle"
-          android:title="@string/menu_turnoff" />
-    <item android:id="@+id/debugBL"
-          android:title="@string/menu_debugBL" />
-    <item android:id="@+id/debugBQ"
-          android:title="@string/menu_debugBQ" />
+          android:title="@string/menu_turnon" />
+    <item android:id="@+id/clearSPs"
+          android:title="@string/menu_clearSPs" />
+    <item android:id="@+id/debugTQ"
+          android:title="@string/menu_debugTQ" />
 </menu>

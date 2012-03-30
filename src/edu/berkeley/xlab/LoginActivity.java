@@ -8,9 +8,12 @@ import java.util.TimeZone;
 import org.json.JSONObject;
 
 import android.app.Activity;
-import android.content.ComponentName;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.os.Bundle;
+import android.os.AsyncTask;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
@@ -19,7 +22,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import edu.berkeley.xlab.constants.Configuration;
+import edu.berkeley.xlab.constants.Constants;
 import edu.berkeley.xlab.util.Utils;
 
 public class LoginActivity extends Activity implements OnClickListener {
@@ -28,26 +31,37 @@ public class LoginActivity extends Activity implements OnClickListener {
 	private EditText etPassword;
 	private Button btnLogin;
 	private TextView lblResult;
+	private String username;
+	private String password;
+	private Map<String, String> params;
+	private Activity activity;
+	private Context context;
+	private ProgressDialog dialog;
 	
 	public static final String LOGIN_ACTIVITY_TAG = "XLab-LOGIN";
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+	protected void onStart() {
+		super.onStart();
 		
-		Log.d(LOGIN_ACTIVITY_TAG, "In LoginActivity - onCreate");
-        ComponentName comp = new ComponentName(this.getApplicationContext().getPackageName(),BackgroundService.class.getName());
-		this.getApplicationContext().startService(new Intent().setComponent(comp));
-
-		if(Utils.getBooleanPreference(this, Configuration.IS_LOGGED_IN, false) || 
-				Configuration.IS_DEV_MODE) {
+		activity = LoginActivity.this;
+		context = getApplicationContext();
+		
+		if(Utils.getBooleanPreference(activity, Constants.IS_LOGGED_IN, false) || 
+				Constants.IS_DEV_MODE) {
 			Log.d(LOGIN_ACTIVITY_TAG, "User is logged in - redirect to main screen");
-        	Intent intent = new Intent(this, MainActivity.class);
+        	Intent intent = new Intent(context, MainActivity.class);
         	startActivity(intent);
+        	LoginActivity.this.finish();
 			
         } else {
         	Log.d(LOGIN_ACTIVITY_TAG, "User is not logged in - display login form");
 			setContentView(R.layout.login);
+			
+			//ready dialog
+			dialog = new ProgressDialog(activity);
+			dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+			dialog.setMessage("Connecting to XLab server...");
 			
 			// Get the EditText and Button References
 			etUsername = (EditText)findViewById(R.id.username);
@@ -63,13 +77,13 @@ public class LoginActivity extends Activity implements OnClickListener {
 	@Override
 	public void onClick(View v) {
 		if (v == findViewById(R.id.login_button)) {
-			String username = this.etUsername.getText().toString().trim();
-			String password = this.etPassword.getText().toString().trim();
+			username = this.etUsername.getText().toString().trim();
+			password = this.etPassword.getText().toString().trim();
 			
 			if(username.equalsIgnoreCase("") || password.equalsIgnoreCase("")) {
 				this.lblResult.setText("Please provide a username and password");
 			} else {
-				Map<String, String> params = new HashMap<String, String>();
+				params = new HashMap<String, String>();
 				TelephonyManager tm = (TelephonyManager)getSystemService(TELEPHONY_SERVICE);
 				TimeZone tz = TimeZone.getDefault();
 				params.put("api_version", "2");
@@ -79,37 +93,12 @@ public class LoginActivity extends Activity implements OnClickListener {
 				params.put("identifier", tm.getDeviceId());
 				params.put("location_services","none");
 				params.put("timezone", tz.getID());
-				params.put("key", md5(Configuration.SECRET_KEY + username));
-				Log.d(LOGIN_ACTIVITY_TAG, "Hashkey is " + md5(Configuration.SECRET_KEY + username));
-				try {
-					//TODO: Move network call out of UI thread (use AsyncTask)
-					String response = Utils.postData(Configuration.AUTH_API_ENDPOINT, params);
-					Log.d(LOGIN_ACTIVITY_TAG, response);
-					if(null != response) {
-						//Parse the JSON response
-						JSONObject jsonObj = new JSONObject(response);
-						int responseCode = (Integer) jsonObj.get("code");
-						
-						if(responseCode == 1) {
-							//Save the username in shared preferences
-							Utils.setStringPreference(this, Configuration.USERNAME, username);
-							Utils.setBooleanPreference(this, Configuration.IS_LOGGED_IN, true);
-							
-							//Redirect to main screen
-				        	Intent intent = new Intent(this, MainActivity.class);
-				        	startActivity(intent);
-				        	
-						} else {
-							this.lblResult.setText("The username or password is incorrect.");
-						}
-					}
-				} catch (Exception e) {
-					String errStr = "Could not connect to server. " +
-							"Please check if you are connected to the internet.";
-					this.lblResult.setText(errStr);
-					Log.e(LOGIN_ACTIVITY_TAG, e.toString());
-				}
+				params.put("key", md5(Constants.SECRET_KEY + username));
+				params.put("change_phone", "1");
+				Log.d(LOGIN_ACTIVITY_TAG, "Hashkey is " + md5(Constants.SECRET_KEY + username));
+				new Login().execute();
 			}
+			
 			
 		}		
 	}
@@ -133,4 +122,74 @@ public class LoginActivity extends Activity implements OnClickListener {
 	    return null;
 	}
 	
+	private class Login extends AsyncTask<Void, Void, Void> {
+		
+		private String message;
+		
+		@Override
+		protected void onPreExecute() {
+
+			//Initialize values and show dialog
+			dialog.show();
+								
+		}
+		
+		@Override
+		protected Void doInBackground(Void... whatever) {
+			try {
+				String response = Utils.postData(Constants.AUTH_API_ENDPOINT, params);
+				Log.d(LOGIN_ACTIVITY_TAG, response);
+				if(null != response) {
+					//Parse the JSON response
+					JSONObject jsonObj = new JSONObject(response);
+					int responseCode = (Integer) jsonObj.get("code");
+					
+					if(responseCode == 1) {
+						//Save the username in shared preferences
+						Utils.setStringPreference(context, Constants.USERNAME, username);
+						Utils.setBooleanPreference(context, Constants.IS_LOGGED_IN, true);
+						
+						message = "You have successfully logged in";
+						
+						//Redirect to main screen
+			        	Intent intent = new Intent(context, MainActivity.class);
+			        	startActivity(intent);
+			        	LoginActivity.this.finish();
+			        	
+					} else {
+						
+						message = "The username or password is incorrect.";
+						
+					}
+				}
+			} catch (Exception e) {
+				Log.e(LOGIN_ACTIVITY_TAG, e.toString());
+				message = "Could not connect to server. Please check if you are connected to the internet.";
+			}
+			
+			return null;
+
+		}
+		
+		@Override
+		protected void onPostExecute(Void whatever) {
+			
+			dialog.hide();
+			
+			AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+			builder.setMessage(message);
+			builder.setNeutralButton("OK",
+			new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					if (message.equals("You have successfully logged in")) {
+						activity.startActivity(new Intent(context, MainActivity.class));
+					}
+				}
+			});
+
+			AlertDialog alert = builder.create();
+			alert.show();
+				
+		}
+	}		
 }
